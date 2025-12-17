@@ -1,0 +1,83 @@
+---
+- name: Check if Docker is installed
+  command: docker --version
+  register: docker_version
+  changed_when: false
+  failed_when: false
+
+- name: Install Docker dependencies (Oracle Linux)
+  yum:
+    name:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+    state: present
+  when: docker_version.rc != 0 and ansible_facts['distribution'] != "Amazon"
+
+- name: Add Docker repository (Oracle Linux)
+  yum_repository:
+    name: docker-ce
+    description: Docker CE Repository
+    baseurl: https://download.docker.com/linux/centos/8/$basearch/stable
+    gpgcheck: yes
+    gpgkey: https://download.docker.com/linux/centos/gpg
+    enabled: yes
+  when: docker_version.rc != 0 and ansible_facts['distribution'] != "Amazon"
+
+- name: Install Docker (Oracle Linux)
+  yum:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+  when: docker_version.rc != 0 and ansible_facts['distribution'] != "Amazon"
+  notify: start docker
+
+- name: Install Docker (Amazon Linux - já instalado via user-data, apenas garantir que está rodando)
+  debug:
+    msg: "Docker já instalado via user-data no Amazon Linux"
+  when: ansible_facts['distribution'] == "Amazon"
+
+
+- name: Add user to docker group
+  user:
+    name: "{{ app_user }}"
+    groups: docker
+    append: yes
+
+- name: Enable and start Docker
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: Check if Docker Compose is installed
+  command: docker-compose --version
+  register: docker_compose_version
+  changed_when: false
+  failed_when: false
+
+- name: Install Docker Compose (if not installed)
+  get_url:
+    url: "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-{{ ansible_facts['architecture'] }}"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  when: docker_compose_version.rc != 0
+
+- name: Verify Docker installation
+  command: docker --version
+  register: docker_installed
+  changed_when: false
+
+- name: Verify Docker Compose installation
+  command: docker-compose --version
+  register: docker_compose_installed
+  changed_when: false
+
+- name: Display Docker versions
+  debug:
+    msg:
+      - "Docker: {{ docker_installed.stdout }}"
+      - "Docker Compose: {{ docker_compose_installed.stdout }}"
+

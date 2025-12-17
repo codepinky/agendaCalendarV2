@@ -1,0 +1,60 @@
+---
+- name: Provision Agenda Calendar VM
+  hosts: agenda_calendar
+  become: yes
+  vars:
+    app_user: "{{ ansible_user }}"
+    app_dir: "/opt/agenda-calendar"
+    backend_dir: "{{ app_dir }}/backend"
+    n8n_dir: "{{ app_dir }}/n8n"
+    # Flag para controlar atualização completa (desabilitar em deploys frequentes)
+    full_system_update: false
+    
+  pre_tasks:
+    # OTIMIZAÇÃO: Atualização seletiva apenas de pacotes essenciais
+    - name: Update essential packages only (yum)
+      yum:
+        name:
+          - yum-utils
+          - curl
+          - wget
+          - git
+        state: latest
+      when: ansible_os_family == "RedHat" and ansible_distribution != "Amazon" and full_system_update | bool(false)
+    
+    - name: Update essential packages only (dnf - Amazon Linux)
+      dnf:
+        name:
+          - curl
+          - wget
+          - git
+        state: latest
+      when: ansible_distribution == "Amazon" and full_system_update | bool(false)
+    
+    # Atualização completa apenas quando explicitamente solicitada
+    - name: Full system update (yum) - only if requested
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat" and ansible_distribution != "Amazon" and full_system_update | bool(true)
+    
+    - name: Full system update (dnf - Amazon Linux) - only if requested
+      dnf:
+        name: "*"
+        state: latest
+      when: ansible_distribution == "Amazon" and full_system_update | bool(true)
+
+  roles:
+    # OTIMIZAÇÃO: Roles independentes podem ser executadas em paralelo
+    # (requer ansible com forks > 1: ansible-playbook -f 4)
+    - role: docker
+    - role: nodejs
+    # n8n e backend dependem de docker/nodejs, então mantêm ordem
+    - role: n8n
+    - role: backend
+
+  post_tasks:
+    - name: Display completion message
+      debug:
+        msg: "Provisioning completed successfully! Backend and N8N are ready."
+

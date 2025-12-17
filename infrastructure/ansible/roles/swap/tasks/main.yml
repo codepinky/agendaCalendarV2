@@ -1,0 +1,41 @@
+---
+- name: Check if swap is already enabled
+  command: swapon --show
+  register: swap_show
+  changed_when: false
+  failed_when: false
+
+- name: Create swap file (only if no swap is active)
+  shell: |
+    set -euo pipefail
+    if [ ! -f /swapfile ]; then
+      fallocate -l {{ swap_size_mb }}M /swapfile || dd if=/dev/zero of=/swapfile bs=1M count={{ swap_size_mb }}
+      chmod 600 /swapfile
+      mkswap /swapfile
+    fi
+  args:
+    executable: /bin/bash
+  when: swap_show.stdout | trim == ""
+
+- name: Enable swapfile (only if no swap is active)
+  command: swapon /swapfile
+  when: swap_show.stdout | trim == ""
+
+- name: Persist swapfile in /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    line: "/swapfile swap swap defaults 0 0"
+    create: true
+    state: present
+
+- name: Show swap status
+  command: swapon --show
+  register: swap_status
+  changed_when: false
+
+- name: Display swap info
+  debug:
+    msg:
+      - "Swap configurado:"
+      - "{{ swap_status.stdout | default('(sem saída)') }}"
+

@@ -1,0 +1,12 @@
+.shared-button {
+  width: 100%;
+}
+
+/* Mobile First */
+@media (min-width: 768px) {
+  .shared-button {
+    width: auto;
+    min-width: 120px;
+  }
+}
+

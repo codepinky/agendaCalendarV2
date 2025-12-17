@@ -1,0 +1,42 @@
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.register-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.register-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #6c757d;
+}
+
+/* Mobile First */
+@media (min-width: 768px) {
+  .register-card {
+    padding: 3rem;
+  }
+  
+  .register-title {
+    font-size: 2rem;
+  }
+}
+

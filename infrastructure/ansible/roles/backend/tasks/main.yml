@@ -1,0 +1,96 @@
+---
+- name: Create backend directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+  loop:
+    - "{{ backend_dir }}"
+    - "{{ backend_dir }}/logs"
+
+- name: Install rsync (if not installed)
+  dnf:
+    name: rsync
+    state: present
+  when: ansible_facts['distribution'] == "Amazon"
+  ignore_errors: yes
+
+- name: Install rsync (Oracle Linux)
+  yum:
+    name: rsync
+    state: present
+  when: ansible_facts['distribution'] != "Amazon"
+  ignore_errors: yes
+
+- name: Copy backend files from local machine
+  synchronize:
+    src: "{{ backend_src_dir | default(playbook_dir ~ '/../../backend/') }}"
+    dest: "{{ backend_dir }}/"
+    delete: yes
+    rsync_opts:
+      - "--exclude=node_modules"
+      - "--exclude=.env"
+      - "--exclude=dist"
+      - "--exclude=.git"
+      - "--exclude=*.log"
+  delegate_to: localhost
+  become: no
+
+- name: Create backend .env file
+  template:
+    src: backend.env.j2
+    dest: "{{ backend_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0600'
+
+- name: Install backend dependencies
+  npm:
+    path: "{{ backend_dir }}"
+    state: present
+  environment:
+    npm_config_jobs: "{{ npm_config_jobs | default(omit) }}"
+  become_user: "{{ app_user }}"
+
+- name: Build backend
+  command: npm run build
+  args:
+    chdir: "{{ backend_dir }}"
+  environment:
+    npm_config_jobs: "{{ npm_config_jobs | default(omit) }}"
+    NODE_OPTIONS: "--max-old-space-size={{ node_max_old_space_size_mb | default(1536) }}"
+  become_user: "{{ app_user }}"
+
+- name: Create systemd service file
+  template:
+    src: agenda-calendar-backend.service.j2
+    dest: /etc/systemd/system/agenda-calendar-backend.service
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart backend
+
+- name: Enable and start backend service
+  systemd:
+    name: agenda-calendar-backend
+    enabled: yes
+    state: started
+
+- name: Wait for backend to be ready
+  uri:
+    url: "http://localhost:3000/health"
+    status_code: 200
+  register: backend_health
+  until: backend_health.status == 200
+  retries: 30
+  delay: 3
+  ignore_errors: yes
+
+- name: Display backend information
+  debug:
+    msg:
+      - "Backend is running on port 3000"
+      - "Health check: http://{{ ansible_default_ipv4.address }}:3000/health"
+

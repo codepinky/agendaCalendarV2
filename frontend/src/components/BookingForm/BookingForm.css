@@ -1,0 +1,11 @@
+.booking-form-container {
+  width: 100%;
+}
+
+/* Mobile First */
+@media (min-width: 768px) {
+  .booking-form-container {
+    max-width: 500px;
+  }
+}
+

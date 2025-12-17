@@ -1,0 +1,52 @@
+---
+- name: Create N8N directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+  loop:
+    - "{{ n8n_dir }}/data"
+    - "{{ n8n_dir }}/workflows"
+
+- name: Create N8N docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ n8n_dir }}/docker-compose.yml"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0644'
+
+- name: Create N8N .env file
+  template:
+    src: n8n.env.j2
+    dest: "{{ n8n_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0600'
+
+- name: Start N8N with Docker Compose
+  shell: |
+    cd {{ n8n_dir }}
+    docker-compose up -d
+  become_user: "{{ app_user }}"
+  changed_when: true
+
+- name: Wait for N8N to be ready
+  uri:
+    url: "http://localhost:5678/healthz"
+    status_code: 200
+  register: n8n_health
+  until: n8n_health.status == 200
+  retries: 30
+  delay: 5
+  ignore_errors: yes
+
+- name: Display N8N information
+  debug:
+    msg:
+      - "N8N is running on port 5678"
+      - "Access: http://{{ ansible_facts['default_ipv4']['address'] }}:5678"
+      - "Default credentials: admin / {{ n8n_password }}"
+

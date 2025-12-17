@@ -1,0 +1,30 @@
+---
+- name: Deploy da aplicação (N8N + Backend)
+  hosts: agenda_calendar
+  become: yes
+  gather_facts: yes
+
+  vars:
+    app_user: "{{ ansible_user }}"
+    app_dir: "/opt/agenda-calendar"
+    backend_dir: "{{ app_dir }}/backend"
+    n8n_dir: "{{ app_dir }}/n8n"
+    # Para t3.micro: reduzir paralelismo do npm
+    npm_config_jobs: "1"
+    # Aumentar heap do Node para evitar OOM no tsc (padrão ~512MB)
+    node_max_old_space_size_mb: "1536"
+
+  pre_tasks:
+    - name: "📌 Resumo do deploy da aplicação"
+      debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Tipo: app (N8N + Backend)"
+          - "Diretório app: {{ app_dir }}"
+          - "NPM jobs: {{ npm_config_jobs }}"
+          - "Node max old space: {{ node_max_old_space_size_mb }}MB"
+
+  roles:
+    - role: n8n
+    - role: backend
+

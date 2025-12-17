@@ -1,0 +1,19 @@
+[Unit]
+Description=Agenda Calendar Backend API
+After=network.target
+
+[Service]
+Type=simple
+User={{ app_user }}
+WorkingDirectory={{ backend_dir }}
+Environment=NODE_ENV=production
+EnvironmentFile={{ backend_dir }}/.env
+ExecStart=/usr/bin/node {{ backend_dir }}/dist/index.js
+Restart=always
+RestartSec=10
+StandardOutput=append:{{ backend_dir }}/logs/backend.log
+StandardError=append:{{ backend_dir }}/logs/backend-error.log
+
+[Install]
+WantedBy=multi-user.target
+

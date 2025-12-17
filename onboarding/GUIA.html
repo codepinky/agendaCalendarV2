@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guia - AWS + Terraform + Ansible + DuckDNS + Nginx + HTTPS + n8n</title>
+  <style>
+    :root { --fg:#111; --muted:#555; --bg:#fff; --codebg:#f6f8fa; --border:#e5e7eb; }
+    html,body{ background:var(--bg); color:var(--fg); font: 14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"; }
+    .container{ max-width: 900px; margin: 32px auto; padding: 0 20px; }
+    h1{ font-size: 24px; margin: 0 0 6px; }
+    h2{ font-size: 18px; margin: 22px 0 8px; border-top: 1px solid var(--border); padding-top: 14px; }
+    h3{ font-size: 15px; margin: 16px 0 6px; }
+    p{ margin: 8px 0; }
+    ul{ margin: 6px 0 10px 18px; }
+    code{ background: var(--codebg); padding: 2px 5px; border-radius: 4px; }
+    pre{ background: var(--codebg); border: 1px solid var(--border); padding: 10px 12px; border-radius: 8px; overflow-x: auto; }
+    pre code{ background: transparent; padding: 0; }
+    .muted{ color: var(--muted); }
+    .callout{ border: 1px solid var(--border); border-left: 4px solid #111; padding: 10px 12px; border-radius: 8px; margin: 10px 0; }
+    @media print {
+      .container{ margin: 0; max-width: none; }
+      h2{ page-break-before: auto; }
+      pre{ page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Guia completo: AWS + Terraform + Ansible + DuckDNS + Nginx + HTTPS + n8n</h1>
+    <p class="muted">PDF gerado automaticamente a partir deste HTML.</p>
+
+    <div class="callout">
+      <p><strong>Se você travar</strong> e o troubleshooting não resolver, pergunte para uma IA (ChatGPT/afins) colando: o comando, o erro completo e seu SO.</p>
+    </div>
+
+    <h2>Resultado final</h2>
+    <ul>
+      <li>Backend: <code>https://SEU_DOMINIO_BACKEND/health</code> → <code>200 OK</code></li>
+      <li>n8n UI: <code>https://SEU_DOMINIO_N8N/</code> → pede usuário/senha</li>
+      <li>Webhooks: <code>https://SEU_DOMINIO_N8N/webhook/...</code> → público (pode dar <code>404</code> se o path não existir)</li>
+    </ul>
+
+    <h2>0) Pré-requisitos</h2>
+    <ul>
+      <li>AWS CLI configurado: <code>aws configure</code></li>
+      <li>Terraform instalado</li>
+      <li>Ansible instalado</li>
+      <li>Chave SSH criada</li>
+    </ul>
+    <pre><code>ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub</code></pre>
+
+    <h2>1) Subir a VM (Terraform)</h2>
+    <pre><code>cd onboarding/aws/terraform
+cp terraform.tfvars.example terraform.tfvars</code></pre>
+    <p>Edite <code>terraform.tfvars</code> e preencha: <code>aws_region</code>, <code>ssh_public_key</code>, <code>ansible_user</code>.</p>
+    <pre><code>terraform init
+terraform apply</code></pre>
+    <p>Anote o <strong>IP público</strong>.</p>
+
+    <h2>2) Preparar o Ansible</h2>
+    <pre><code>cd onboarding/ansible
+cp inventory.ini.example inventory.ini
+cp group_vars/all.yml.example group_vars/all.yml</code></pre>
+    <p>Edite <code>inventory.ini</code> e substitua <code>SEU_IP_OU_HOST_AQUI</code>. Depois preencha <code>group_vars/all.yml</code> (Firebase, Google OAuth, CORS e n8n).</p>
+
+    <h2>3) Provisionar (Ansible)</h2>
+    <pre><code>ansible-playbook playbook.app.yml --check
+ansible-playbook playbook.app.yml</code></pre>
+    <p>Valide na VM:</p>
+    <pre><code>curl -i http://localhost:3000/health | head -n 10
+curl -i http://localhost:5678/healthz | head -n 10</code></pre>
+
+    <h2>4) DuckDNS</h2>
+    <p>No site <code>https://www.duckdns.org</code>:</p>
+    <ul>
+      <li>Crie um domínio para o backend (ex.: <code>meuprojeto.duckdns.org</code>)</li>
+      <li>Crie um domínio para o n8n (ex.: <code>n8nmeuprojeto.duckdns.org</code>)</li>
+      <li>Aponte ambos para o IP público da VM</li>
+    </ul>
+    <p>Valide DNS:</p>
+    <pre><code>dig +short SEU_DOMINIO_BACKEND.duckdns.org
+dig +short SEU_DOMINIO_N8N.duckdns.org</code></pre>
+
+    <h3>Atualização automática do IP (systemd timer)</h3>
+    <pre><code>sudo tee /etc/systemd/system/duckdns-update.service >/dev/null &lt;&lt;'EOF'
+[Unit]
+Description=DuckDNS updater
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/curl -fsS https://www.duckdns.org/update?domains=SEU_DOMINIO&amp;token=SEU_TOKEN_AQUI&amp;ip=
+EOF
+
+sudo tee /etc/systemd/system/duckdns-update.timer >/dev/null &lt;&lt;'EOF'
+[Unit]
+Description=Run DuckDNS updater every 5 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Unit=duckdns-update.service
+
+[Install]
+WantedBy=timers.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now duckdns-update.timer</code></pre>
+
+    <h2>5) Nginx + senha na UI do n8n</h2>
+    <pre><code>sudo dnf install -y nginx httpd-tools
+sudo systemctl enable --now nginx
+sudo htpasswd -c /etc/nginx/.htpasswd admin</code></pre>
+    <p>Config do Nginx (ajuste os domínios):</p>
+    <pre><code>sudo tee /etc/nginx/conf.d/agenda-calendar.conf >/dev/null &lt;&lt;'EOF'
+server {
+  listen 80;
+  server_name SEU_DOMINIO_BACKEND;
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+server {
+  listen 80;
+  server_name SEU_DOMINIO_N8N;
+
+  location ~ ^/(webhook|webhook-test)/ {
+    proxy_pass http://127.0.0.1:5678;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  location / {
+    auth_basic "Restricted";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+    proxy_pass http://127.0.0.1:5678;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+EOF
+
+sudo nginx -t
+sudo systemctl reload nginx</code></pre>
+
+    <h2>6) HTTPS com Certbot</h2>
+    <pre><code>sudo dnf install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d SEU_DOMINIO_BACKEND -d SEU_DOMINIO_N8N</code></pre>
+    <p>Validar:</p>
+    <pre><code>curl -i https://SEU_DOMINIO_BACKEND/health | head -n 10
+curl -I https://SEU_DOMINIO_N8N/ | head -n 5</code></pre>
+
+    <h2>7) Segurança (Security Group)</h2>
+    <ul>
+      <li>Mantenha inbound: <code>22</code>, <code>80</code>, <code>443</code></li>
+      <li>Feche inbound: <code>3000</code>, <code>5678</code></li>
+    </ul>
+
+    <h2>Troubleshooting</h2>
+    <h3>Ansible não conecta</h3>
+    <ul>
+      <li>Confirme IP/usuário no <code>inventory.ini</code> (Amazon Linux: <code>ec2-user</code>)</li>
+      <li>Teste SSH direto: <code>ssh -i ~/.ssh/id_rsa ec2-user@SEU_IP</code></li>
+    </ul>
+    <h3>Certbot falhou</h3>
+    <ul>
+      <li><code>dig +short SEU_DOMINIO</code> precisa apontar para o IP da VM</li>
+      <li>Security Group precisa ter 80/443 abertos</li>
+      <li>Nginx precisa estar rodando</li>
+    </ul>
+    <h3>Webhook retorna 404</h3>
+    <p>Normal quando o path ainda não existe no n8n.</p>
+  </div>
+</body>
+</html>
+
+

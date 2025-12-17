@@ -1,0 +1,5 @@
+---
+# Ansible Galaxy requirements (se necessário no futuro)
+# collections:
+#   - name: community.docker
+#     version: ">=2.0.0"

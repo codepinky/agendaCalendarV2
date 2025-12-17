@@ -1,0 +1,13 @@
+# AWS Configuration
+# Copie este arquivo para terraform.tfvars e preencha com suas informações
+
+# Região AWS (Free Tier disponível em todas as regiões)
+# Recomendado: us-east-1 (N. Virginia) - geralmente tem melhor disponibilidade
+aws_region = "us-east-1"
+
+# SSH Public Key (conteúdo completo da chave pública)
+# Obter com: cat ~/.ssh/id_rsa.pub
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAB... user@machine"
+
+# Usuário para Ansible (padrão: ec2-user para Amazon Linux)
+ansible_user = "ec2-user"

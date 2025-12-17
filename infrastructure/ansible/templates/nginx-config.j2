@@ -1,0 +1,49 @@
+# Backend API
+upstream backend {
+    server localhost:{{ backend_port }};
+}
+
+# N8N
+upstream n8n {
+    server localhost:{{ n8n_port }};
+}
+
+server {
+    listen 80;
+    server_name {{ ansible_default_ipv4.address }};
+
+    # Backend API
+    location /api {
+        proxy_pass http://backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+    }
+
+    # N8N
+    location /n8n {
+        proxy_pass http://n8n;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Health check
+    location /health {
+        proxy_pass http://backend/health;
+        access_log off;
+    }
+}
+

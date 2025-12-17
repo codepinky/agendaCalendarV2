@@ -1,0 +1,9 @@
+[agenda_calendar]
+# Substitua pelo IP público/DNS da sua VM
+# Exemplo:
+# 54.207.236.103 ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/id_rsa
+SEU_IP_OU_HOST_AQUI ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[agenda_calendar:vars]
+ansible_python_interpreter=/usr/bin/python3
+

@@ -1,0 +1,158 @@
+---
+- name: Create backend directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+  loop:
+    - "{{ backend_dir }}"
+    - "{{ backend_dir }}/logs"
+
+- name: Install rsync (if not installed)
+  dnf:
+    name: rsync
+    state: present
+  when: ansible_distribution == "Amazon"
+  ignore_errors: yes
+
+- name: Install rsync (Oracle Linux)
+  yum:
+    name: rsync
+    state: present
+  when: ansible_distribution != "Amazon"
+  ignore_errors: yes
+
+# OTIMIZAÇÃO: Verificar se precisa copiar arquivos (usando checksum)
+- name: Get package.json checksum
+  stat:
+    path: "{{ backend_dir }}/package.json"
+  register: package_json_stat
+
+- name: Copy backend files from local machine
+  synchronize:
+    src: "/Users/marcosraia/Projetos/AgendaCalendarV2/backend/"
+    dest: "{{ backend_dir }}/"
+    delete: yes
+    rsync_opts:
+      - "--exclude=node_modules"
+      - "--exclude=.env"
+      - "--exclude=dist"
+      - "--exclude=.git"
+      - "--exclude=*.log"
+      - "--checksum"  # OTIMIZAÇÃO: Usa checksum para detectar mudanças
+  delegate_to: localhost
+  become: no
+  register: files_synced
+
+- name: Create backend .env file
+  template:
+    src: backend.env.j2
+    dest: "{{ backend_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0600'
+  register: env_file_created
+
+# OTIMIZAÇÃO: Instalar dependências apenas se package.json mudou
+- name: Get package.json checksum after sync
+  stat:
+    path: "{{ backend_dir }}/package.json"
+  register: package_json_after_sync
+
+- name: Check if node_modules exists
+  stat:
+    path: "{{ backend_dir }}/node_modules"
+  register: node_modules_stat
+
+- name: Install backend dependencies
+  npm:
+    path: "{{ backend_dir }}"
+    state: present
+  become_user: "{{ app_user }}"
+  when: >
+    (package_json_stat.stat.checksum is not defined) or
+    (package_json_stat.stat.checksum != package_json_after_sync.stat.checksum) or
+    (node_modules_stat.stat.exists == false) or
+    (files_synced.changed == true)
+  register: npm_install_result
+
+# OTIMIZAÇÃO: Build apenas se código mudou ou se não existe dist
+- name: Check if dist directory exists
+  stat:
+    path: "{{ backend_dir }}/dist"
+  register: dist_stat
+
+- name: Build backend
+  command: npm run build
+  args:
+    chdir: "{{ backend_dir }}"
+  become_user: "{{ app_user }}"
+  when: >
+    (dist_stat.stat.exists == false) or
+    (files_synced.changed == true) or
+    (npm_install_result.changed == true) or
+    (env_file_created.changed == true)
+  register: build_result
+
+- name: Create systemd service file
+  template:
+    src: agenda-calendar-backend.service.j2
+    dest: /etc/systemd/system/agenda-calendar-backend.service
+    mode: '0644'
+  register: service_file_created
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  when: service_file_created.changed
+
+# OTIMIZAÇÃO: Reiniciar serviço apenas se necessário
+- name: Check if service is running
+  systemd:
+    name: agenda-calendar-backend
+  register: service_status
+
+- name: Enable and start backend service
+  systemd:
+    name: agenda-calendar-backend
+    enabled: yes
+    state: restarted
+  when: >
+    (service_file_created.changed == true) or
+    (build_result.changed == true) or
+    (env_file_created.changed == true) or
+    (service_status.status.ActiveState != "active")
+
+- name: Enable and ensure service is started (if no changes)
+  systemd:
+    name: agenda-calendar-backend
+    enabled: yes
+    state: started
+  when: >
+    (service_file_created.changed == false) and
+    (build_result.changed == false) and
+    (env_file_created.changed == false) and
+    (service_status.status.ActiveState == "active")
+
+# OTIMIZAÇÃO: Health check mais inteligente (menos retries, timeout menor)
+- name: Wait for backend to be ready
+  uri:
+    url: "http://localhost:3000/health"
+    status_code: 200
+    timeout: 5
+  register: backend_health
+  until: backend_health.status == 200
+  retries: 10  # Reduzido de 30 para 10 (máximo 50s ao invés de 90s)
+  delay: 2     # Reduzido de 3s para 2s
+  ignore_errors: yes
+
+- name: Display backend information
+  debug:
+    msg:
+      - "Backend is running on port 3000"
+      - "Health check: http://{{ ansible_default_ipv4.address }}:3000/health"
+      - "Build skipped: {{ (dist_stat.stat.exists == true and files_synced.changed == false) | ternary('Yes', 'No') }}"
+      - "Dependencies reinstalled: {{ npm_install_result.changed | ternary('Yes', 'No') }}"
+

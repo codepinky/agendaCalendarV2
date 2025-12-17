@@ -1,0 +1,11 @@
+.calendar-container {
+  width: 100%;
+}
+
+/* Mobile First */
+@media (min-width: 768px) {
+  .calendar-container {
+    max-width: 600px;
+  }
+}
+

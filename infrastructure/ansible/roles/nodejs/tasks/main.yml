@@ -1,0 +1,63 @@
+---
+- name: Check if Node.js is installed
+  command: node --version
+  register: node_version
+  changed_when: false
+  failed_when: false
+
+- name: Add NodeSource repository (yum - Oracle Linux)
+  yum_repository:
+    name: nodesource
+    description: Node.js 20.x Repository
+    baseurl: https://rpm.nodesource.com/pub_20.x/el/8/$basearch
+    gpgcheck: yes
+    gpgkey: https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
+    enabled: yes
+  when: node_version.rc != 0 and ansible_facts['distribution'] != "Amazon"
+
+- name: Add NodeSource repository (dnf - Amazon Linux)
+  shell: |
+    curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+  when: node_version.rc != 0 and ansible_facts['distribution'] == "Amazon"
+  changed_when: true
+
+- name: Install Node.js (yum)
+  yum:
+    name: nodejs
+    state: present
+  when: node_version.rc != 0 and ansible_facts['distribution'] != "Amazon"
+
+- name: Install Node.js (dnf - Amazon Linux)
+  dnf:
+    name: nodejs
+    state: present
+  when: node_version.rc != 0 and ansible_facts['distribution'] == "Amazon"
+
+- name: Verify Node.js installation
+  command: node --version
+  register: node_installed
+  changed_when: false
+
+- name: Verify npm installation
+  command: npm --version
+  register: npm_installed
+  changed_when: false
+
+- name: Install PM2 globally
+  npm:
+    name: pm2
+    global: yes
+    state: present
+
+- name: Setup PM2 startup script
+  command: pm2 startup systemd -u "{{ app_user }}" --hp "/home/{{ app_user }}"
+  register: pm2_startup
+  changed_when: "'already' not in pm2_startup.stdout"
+
+- name: Display Node.js versions
+  debug:
+    msg:
+      - "Node.js: {{ node_installed.stdout }}"
+      - "npm: {{ npm_installed.stdout }}"
+      - "PM2: Installed and configured"
+

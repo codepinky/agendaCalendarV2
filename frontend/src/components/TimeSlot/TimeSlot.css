@@ -1,0 +1,11 @@
+.time-slot-container {
+  width: 100%;
+}
+
+/* Mobile First */
+@media (min-width: 768px) {
+  .time-slot-container {
+    max-width: 400px;
+  }
+}
+

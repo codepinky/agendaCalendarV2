@@ -1,0 +1,36 @@
+# Application Configuration
+app_user: "ec2-user"  # Amazon Linux 2023
+app_dir: "/opt/agenda-calendar"
+backend_dir: "{{ app_dir }}/backend"
+n8n_dir: "{{ app_dir }}/n8n"
+
+# Firebase Configuration (obrigatório)
+# - firebase_project_id: ID do projeto no Firebase (ex: "meu-projeto")
+# - firebase_client_email: e-mail da service account
+# - firebase_private_key: chave privada da service account (mantenha o \n)
+firebase_project_id: "SEU_FIREBASE_PROJECT_ID"
+firebase_client_email: "SEU_FIREBASE_CLIENT_EMAIL"
+firebase_private_key: "-----BEGIN PRIVATE KEY-----\\nSUA_CHAVE_AQUI\\n-----END PRIVATE KEY-----\\n"
+
+# Google Calendar OAuth 2.0 (opcional, mas recomendado se usar integração)
+google_client_id: "SEU_GOOGLE_CLIENT_ID"
+google_client_secret: "SEU_GOOGLE_CLIENT_SECRET"
+# Use o domínio final do backend (HTTPS) após configurar Nginx/Certbot
+google_redirect_uri: "https://SEU_DOMINIO_BACKEND/api/google-calendar/callback"
+
+# Server Configuration
+# Origin do seu frontend (Firebase Hosting), ex:
+# cors_origin: "https://seuprojeto.web.app"
+cors_origin: "https://SEU_FRONTEND.web.app"
+
+# N8N Configuration
+# Importante:
+# - n8n_password: senha forte (usada no Basic Auth do n8n + UI protegida pelo Nginx)
+# - n8n_host/protocol: domínio final do n8n (HTTPS) após Nginx/Certbot
+n8n_password: "SENHA_FORTE_AQUI"
+n8n_host: "SEU_DOMINIO_N8N"
+n8n_protocol: "https"
+# URL base dos webhooks do n8n (ajuste o path conforme seu workflow)
+n8n_webhook_url: "https://SEU_DOMINIO_N8N/webhook/SEU_PATH"
+
+

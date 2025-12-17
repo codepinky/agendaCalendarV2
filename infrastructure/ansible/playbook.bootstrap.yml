@@ -1,0 +1,40 @@
+---
+- name: Bootstrap da VM (base + performance)
+  hosts: agenda_calendar
+  become: yes
+  gather_facts: yes
+
+  vars:
+    do_system_upgrade: false
+    swap_size_mb: 2048
+    app_user: "{{ ansible_user }}"
+
+  pre_tasks:
+    - name: "📌 Resumo do bootstrap"
+      debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Distro: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+          - "Tipo: bootstrap (sem app)"
+          - "Swap: {{ swap_size_mb }}MB"
+          - "Upgrade do sistema: {{ do_system_upgrade }}"
+
+    - name: Update system packages (dnf - Amazon Linux)
+      dnf:
+        name: "*"
+        state: latest
+      when: do_system_upgrade | bool and ansible_facts['distribution'] == "Amazon"
+      tags: [system]
+
+    - name: Update system packages (yum - Oracle Linux)
+      yum:
+        name: "*"
+        state: latest
+      when: do_system_upgrade | bool and ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution'] != "Amazon"
+      tags: [system]
+
+  roles:
+    - role: swap
+    - role: docker
+    - role: nodejs
+

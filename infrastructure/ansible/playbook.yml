@@ -1,0 +1,45 @@
+---
+- name: Provision Agenda Calendar VM
+  hosts: agenda_calendar
+  become: yes
+  gather_facts: yes
+  vars:
+    app_user: "{{ ansible_user }}"
+    app_dir: "/opt/agenda-calendar"
+    backend_dir: "{{ app_dir }}/backend"
+    n8n_dir: "{{ app_dir }}/n8n"
+    do_system_upgrade: false
+    
+  pre_tasks:
+    - name: "📌 Resumo do alvo"
+      debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Distro: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+          - "User remoto: {{ ansible_user }}"
+          - "Upgrade do sistema (do_system_upgrade): {{ do_system_upgrade }}"
+
+    - name: Update system packages (yum)
+      yum:
+        name: "*"
+        state: latest
+      when: do_system_upgrade | bool and ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution'] != "Amazon"
+      tags: [system]
+    
+    - name: Update system packages (dnf - Amazon Linux)
+      dnf:
+        name: "*"
+        state: latest
+      when: do_system_upgrade | bool and ansible_facts['distribution'] == "Amazon"
+      tags: [system]
+
+  roles:
+    - role: docker
+    - role: nodejs
+    - role: n8n
+    - role: backend
+
+  post_tasks:
+    - name: Display completion message
+      debug:
+        msg: "Provisioning completed successfully! Backend and N8N are ready."
