@@ -24,6 +24,54 @@ function PublicSchedule() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  // Validação em tempo real
+  const validateField = (field: string, value: string) => {
+    const newErrors = { ...errors };
+    
+    switch (field) {
+      case 'clientEmail':
+        if (!value) {
+          newErrors.clientEmail = labels.errorRequired;
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            newErrors.clientEmail = labels.errorInvalidEmail;
+          } else {
+            delete newErrors.clientEmail;
+          }
+        }
+        break;
+      case 'clientPhone':
+        if (!value) {
+          newErrors.clientPhone = labels.errorRequired;
+        } else {
+          // Validação básica de telefone brasileiro
+          const phoneRegex = /^\([0-9]{2}\)\s[0-9]{4,5}-[0-9]{4}$/;
+          if (!phoneRegex.test(value)) {
+            newErrors.clientPhone = labels.errorInvalidPhone;
+          } else {
+            delete newErrors.clientPhone;
+          }
+        }
+        break;
+      case 'clientName':
+        if (!value) {
+          newErrors.clientName = labels.errorRequired;
+        } else {
+          delete newErrors.clientName;
+        }
+        break;
+    }
+    
+    setErrors(newErrors);
+  };
+
+  const handleBookingChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setBooking({ ...booking, [field]: value });
+    validateField(field, value);
+  };
+
   useEffect(() => {
     if (publicLink) {
       loadAvailableSlots();
@@ -162,7 +210,7 @@ function PublicSchedule() {
                     label={labels.clientName}
                     placeholder={labels.clientNamePlaceholder}
                     value={booking.clientName}
-                    onChange={(e) => setBooking({ ...booking, clientName: e.target.value })}
+                    onChange={handleBookingChange('clientName')}
                     error={errors.clientName}
                     required
                   />
@@ -171,7 +219,7 @@ function PublicSchedule() {
                     label={labels.clientEmail}
                     placeholder={labels.clientEmailPlaceholder}
                     value={booking.clientEmail}
-                    onChange={(e) => setBooking({ ...booking, clientEmail: e.target.value })}
+                    onChange={handleBookingChange('clientEmail')}
                     error={errors.clientEmail}
                     required
                   />
@@ -179,7 +227,7 @@ function PublicSchedule() {
                     label={labels.clientPhone}
                     placeholder={labels.clientPhonePlaceholder}
                     value={booking.clientPhone}
-                    onChange={(e) => setBooking({ ...booking, clientPhone: e.target.value })}
+                    onChange={handleBookingChange('clientPhone')}
                     error={errors.clientPhone}
                     required
                   />
@@ -187,7 +235,7 @@ function PublicSchedule() {
                     label={labels.notes}
                     placeholder={labels.notesPlaceholder}
                     value={booking.notes}
-                    onChange={(e) => setBooking({ ...booking, notes: e.target.value })}
+                    onChange={handleBookingChange('notes')}
                   />
                   <Button type="submit" disabled={submitting}>
                     {submitting ? labels.loading : labels.bookAppointment}

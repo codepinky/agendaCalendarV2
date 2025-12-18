@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Alert, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Alert, Modal, Form, Button as BootstrapButton } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../services/firebase';
@@ -27,6 +27,8 @@ function Dashboard() {
   const [success, setSuccess] = useState('');
   const [creatingSlot, setCreatingSlot] = useState(false);
   const [deletingSlotId, setDeletingSlotId] = useState<string | null>(null);
+  const [slotToDelete, setSlotToDelete] = useState<AvailableSlot | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [copyingLink, setCopyingLink] = useState(false);
   const [connectingGoogle, setConnectingGoogle] = useState(false);
   const [disconnectingGoogle, setDisconnectingGoogle] = useState(false);
@@ -168,6 +170,42 @@ function Dashboard() {
     }
   };
 
+  const handleDeleteSlotClick = (slot: AvailableSlot) => {
+    setSlotToDelete(slot);
+    setShowDeleteModal(true);
+    setError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!slotToDelete) return;
+
+    setDeletingSlotId(slotToDelete.id);
+    setError('');
+    setSuccess('');
+
+    try {
+      await api.delete(`/slots/${slotToDelete.id}`);
+      setSuccess('Horário deletado com sucesso!');
+      setShowDeleteModal(false);
+      setSlotToDelete(null);
+      await loadSlots();
+      await loadBookings();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setDeletingSlotId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setSlotToDelete(null);
+    setError('');
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('authToken');
@@ -269,10 +307,20 @@ function Dashboard() {
                 <div className="dashboard-slots-list">
                   {slots.map((slot) => (
                     <div key={slot.id} className="dashboard-slot-item">
-                      <strong>{slot.date}</strong> - {slot.startTime} às {slot.endTime}
-                      <span className={`dashboard-slot-status dashboard-slot-status-${slot.status}`}>
-                        {slot.status}
-                      </span>
+                      <div>
+                        <strong>{slot.date}</strong> - {slot.startTime} às {slot.endTime}
+                        <span className={`dashboard-slot-status dashboard-slot-status-${slot.status}`}>
+                          {slot.status}
+                        </span>
+                      </div>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteSlotClick(slot)}
+                        disabled={deletingSlotId === slot.id}
+                      >
+                        {deletingSlotId === slot.id ? labels.loading : labels.delete}
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -386,6 +434,33 @@ function Dashboard() {
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={showDeleteModal} onHide={handleCancelDelete}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar Exclusão</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Tem certeza que deseja deletar este horário?</p>
+          {slotToDelete && (
+            <div className="mt-3 p-3 bg-light rounded">
+              <strong>Data:</strong> {slotToDelete.date}<br />
+              <strong>Horário:</strong> {slotToDelete.startTime} às {slotToDelete.endTime}<br />
+              <strong>Status:</strong> {slotToDelete.status}
+            </div>
+          )}
+          <Alert variant="warning" className="mt-3">
+            Esta ação não pode ser desfeita. Se houver agendamentos confirmados, a exclusão será bloqueada.
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCancelDelete} disabled={deletingSlotId !== null}>
+            {labels.cancel}
+          </Button>
+          <Button variant="danger" onClick={handleConfirmDelete} disabled={deletingSlotId !== null}>
+            {deletingSlotId !== null ? labels.loading : labels.delete}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Container>
   );

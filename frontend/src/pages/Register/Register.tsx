@@ -22,6 +22,74 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Validação em tempo real
+  const validateField = (field: string, value: string) => {
+    const newErrors = { ...errors };
+    
+    switch (field) {
+      case 'email':
+        if (!value) {
+          newErrors.email = labels.errorRequired;
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            newErrors.email = labels.errorInvalidEmail;
+          } else {
+            delete newErrors.email;
+          }
+        }
+        break;
+      case 'password':
+        if (!value) {
+          newErrors.password = labels.errorRequired;
+        } else if (value.length < 6) {
+          newErrors.password = 'Senha deve ter no mínimo 6 caracteres';
+        } else {
+          delete newErrors.password;
+        }
+        // Validar confirmPassword se já foi preenchido
+        if (formData.confirmPassword) {
+          if (value !== formData.confirmPassword) {
+            newErrors.confirmPassword = labels.errorPasswordMismatch;
+          } else {
+            delete newErrors.confirmPassword;
+          }
+        }
+        break;
+      case 'confirmPassword':
+        if (!value) {
+          newErrors.confirmPassword = labels.errorRequired;
+        } else if (value !== formData.password) {
+          newErrors.confirmPassword = labels.errorPasswordMismatch;
+        } else {
+          delete newErrors.confirmPassword;
+        }
+        break;
+      case 'name':
+        if (!value) {
+          newErrors.name = labels.errorRequired;
+        } else {
+          delete newErrors.name;
+        }
+        break;
+      case 'licenseCode':
+        if (!value) {
+          newErrors.licenseCode = labels.errorRequired;
+        } else {
+          delete newErrors.licenseCode;
+        }
+        break;
+    }
+    
+    setErrors(newErrors);
+  };
+
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, [field]: value });
+    validateField(field, value);
+  };
+
   const validateLicense = async () => {
     try {
       const response = await api.post('/licenses/validate', {
@@ -106,7 +174,7 @@ function Register() {
             label={labels.licenseCode}
             placeholder={labels.licenseCodePlaceholder}
             value={formData.licenseCode}
-            onChange={(e) => setFormData({ ...formData, licenseCode: e.target.value })}
+            onChange={handleChange('licenseCode')}
             error={errors.licenseCode}
             required
           />
@@ -115,7 +183,7 @@ function Register() {
             label={labels.name}
             placeholder={labels.namePlaceholder}
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={handleChange('name')}
             error={errors.name}
             required
           />
@@ -125,7 +193,7 @@ function Register() {
             label={labels.email}
             placeholder={labels.emailPlaceholder}
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={handleChange('email')}
             error={errors.email}
             required
           />
@@ -135,7 +203,7 @@ function Register() {
             label={labels.password}
             placeholder={labels.passwordPlaceholder}
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            onChange={handleChange('password')}
             error={errors.password}
             required
           />
@@ -145,7 +213,7 @@ function Register() {
             label={labels.confirmPassword}
             placeholder={labels.confirmPasswordPlaceholder}
             value={formData.confirmPassword}
-            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+            onChange={handleChange('confirmPassword')}
             error={errors.confirmPassword}
             required
           />
