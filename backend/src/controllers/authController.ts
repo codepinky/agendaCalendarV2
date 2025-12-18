@@ -7,37 +7,8 @@ import { logger, logSuspiciousActivity, logSecurityError } from '../utils/logger
 
 export const register = async (req: Request, res: Response) => {
   try {
+    // Validação básica já feita pelo express-validator
     const { email, password, name, licenseCode } = req.body;
-
-    // Validation
-    if (!email || !password || !name || !licenseCode) {
-      const missingFields = [];
-      if (!email) missingFields.push('email');
-      if (!password) missingFields.push('senha');
-      if (!name) missingFields.push('nome');
-      if (!licenseCode) missingFields.push('código de licença');
-      
-      return res.status(400).json({ 
-        error: 'Todos os campos são obrigatórios',
-        details: `Campos faltando: ${missingFields.join(', ')}`
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ 
-        error: 'A senha deve ter pelo menos 6 caracteres',
-        details: `Senha fornecida tem ${password.length} caracteres`
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ 
-        error: 'Formato de email inválido',
-        details: 'O email deve estar no formato: exemplo@dominio.com'
-      });
-    }
 
     const licenseRef = db.collection('licenses').doc(licenseCode);
 

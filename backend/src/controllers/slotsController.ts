@@ -10,43 +10,16 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // Validação básica já feita pelo express-validator
     const { date, startTime, endTime, bufferMinutes = 0 } = req.body;
     // maxBookings sempre será 1 (removido do frontend, mantido para compatibilidade)
 
-    if (!date || !startTime || !endTime) {
-      const missingFields = [];
-      if (!date) missingFields.push('data');
-      if (!startTime) missingFields.push('hora de início');
-      if (!endTime) missingFields.push('hora de fim');
-      
-      return res.status(400).json({ 
-        error: 'Todos os campos são obrigatórios',
-        details: `Campos faltando: ${missingFields.join(', ')}`
-      });
-    }
-
-    // Validate and sanitize
-    if (!validateDate(date)) {
-      return res.status(400).json({ 
-        error: 'Formato de data inválido',
-        details: 'Use o formato YYYY-MM-DD (exemplo: 2025-12-20)'
-      });
-    }
-
-    // Validate date is not in the past
+    // Validação adicional: se data é hoje, verificar que hora não é no passado
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const slotDate = new Date(date);
     slotDate.setHours(0, 0, 0, 0);
     
-    if (slotDate < today) {
-      return res.status(400).json({ 
-        error: 'Não é possível criar horário para uma data no passado',
-        details: 'Selecione uma data de hoje ou futura'
-      });
-    }
-
-    // If date is today, validate that times are not in the past
     if (slotDate.getTime() === today.getTime()) {
       const now = new Date();
       const [startHour, startMin] = startTime.split(':').map(Number);
@@ -61,28 +34,10 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    if (!validateTime(startTime) || !validateTime(endTime)) {
-      const invalidFields = [];
-      if (!validateTime(startTime)) invalidFields.push('hora de início');
-      if (!validateTime(endTime)) invalidFields.push('hora de fim');
-      
-      return res.status(400).json({ 
-        error: 'Formato de hora inválido',
-        details: `Use o formato HH:mm (exemplo: 14:30) para: ${invalidFields.join(', ')}`
-      });
-    }
-
+    // Sanitize (express-validator já normaliza, mas mantemos sanitização adicional)
     const sanitizedDate = sanitizeString(date);
     const sanitizedStartTime = sanitizeString(startTime);
     const sanitizedEndTime = sanitizeString(endTime);
-
-    // Validate endTime > startTime
-    if (endTime <= startTime) {
-      return res.status(400).json({ 
-        error: 'A hora de fim deve ser posterior à hora de início',
-        details: `Hora de início: ${startTime}, Hora de fim: ${endTime}`
-      });
-    }
 
     // Validate bufferMinutes (must be >= 0 and reasonable, max 24 hours)
     const buffer = Math.max(0, Math.min(Number(bufferMinutes) || 0, 1440)); // Max 24 hours

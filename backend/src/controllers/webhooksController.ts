@@ -48,6 +48,53 @@ function requireBridgeSecret(req: Request): string | null {
   return null;
 }
 
+/**
+ * Valida a assinatura do webhook Kiwify
+ * A Kiwify envia a assinatura como query parameter 'signature'
+ * A assinatura é calculada usando HMAC SHA256 com o webhook secret da Kiwify
+ */
+function validateKiwifySignature(req: Request, payload: any): boolean {
+  const kiwifyWebhookSecret = process.env.KIWIFY_WEBHOOK_SECRET;
+  
+  // Se não tiver secret configurado, não valida (modo compatibilidade)
+  if (!kiwifyWebhookSecret) {
+    logger.warn('KIWIFY_WEBHOOK_SECRET not configured, skipping signature validation');
+    return true; // Permite passar sem validação se não estiver configurado
+  }
+
+  const signature = req.query?.signature as string | undefined;
+  
+  // Se não tiver signature, não valida (mas loga como aviso)
+  if (!signature) {
+    logger.warn('Kiwify signature not provided in query parameter');
+    return false;
+  }
+
+  try {
+    // A Kiwify calcula a assinatura do payload JSON stringificado
+    const payloadString = JSON.stringify(payload);
+    
+    // Calcula HMAC SHA256
+    const expectedSignature = crypto
+      .createHmac('sha256', kiwifyWebhookSecret)
+      .update(payloadString)
+      .digest('hex');
+
+    // Comparação timing-safe para evitar timing attacks
+    const providedBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSignature);
+    
+    if (providedBuffer.length !== expectedBuffer.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(providedBuffer, expectedBuffer);
+  } catch (error) {
+    logger.error('Error validating Kiwify signature', { error });
+    return false;
+  }
+}
+
 function generateLicenseCode(): string {
   // Human-friendly code (uppercase hex), 12 chars + prefix
   return `LIC-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
@@ -67,6 +114,20 @@ export const kiwifyWebhook = async (req: Request, res: Response) => {
 
     const payload = req.body as KiwifyPayload;
     const signature = (req.query?.signature as string | undefined) ?? null;
+
+    // Validar assinatura Kiwify (se configurado)
+    const isValidSignature = validateKiwifySignature(req, payload);
+    if (!isValidSignature) {
+      logSecurityError('KIWIFY_SIGNATURE_INVALID', {
+        ip: req.ip,
+        endpoint: '/api/webhooks/kiwify',
+        orderId: payload?.order_id,
+      });
+      return res.status(401).json({ 
+        error: 'Invalid Kiwify signature',
+        details: 'A assinatura do webhook não é válida'
+      });
+    }
 
     const orderId = payload?.order_id;
     const email = payload?.Customer?.email;

@@ -30,38 +30,10 @@ export const getAvailableSlots = async (req: any, res: Response) => {
 
 export const createBookingHandler = async (req: any, res: Response) => {
   try {
+    // Validação básica já feita pelo express-validator
     const { publicLink, slotId, clientName, clientEmail, clientPhone, notes } = req.body;
 
-    if (!publicLink || !slotId || !clientName || !clientEmail || !clientPhone) {
-      const missingFields = [];
-      if (!publicLink) missingFields.push('link público');
-      if (!slotId) missingFields.push('ID do horário');
-      if (!clientName) missingFields.push('nome');
-      if (!clientEmail) missingFields.push('email');
-      if (!clientPhone) missingFields.push('telefone');
-      
-      return res.status(400).json({ 
-        error: 'Todos os campos obrigatórios devem ser preenchidos',
-        details: `Campos faltando: ${missingFields.join(', ')}`
-      });
-    }
-
-    // Validation
-    if (!validateEmail(clientEmail)) {
-      return res.status(400).json({ 
-        error: 'Formato de email inválido',
-        details: 'O email deve estar no formato: exemplo@dominio.com'
-      });
-    }
-
-    if (!validatePhone(clientPhone)) {
-      return res.status(400).json({ 
-        error: 'Formato de telefone inválido',
-        details: 'Use o formato brasileiro: (00) 00000-0000 ou (00) 0000-0000'
-      });
-    }
-
-    // Sanitize inputs
+    // Sanitize inputs (express-validator já normaliza email, mas mantemos sanitização adicional)
     const sanitizedData = {
       clientName: sanitizeString(clientName),
       clientEmail: sanitizeEmail(clientEmail),

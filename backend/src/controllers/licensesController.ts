@@ -5,11 +5,8 @@ import { logger, logSuspiciousActivity } from '../utils/logger';
 
 export const validateLicense = async (req: Request, res: Response) => {
   try {
+    // Validação básica já feita pelo express-validator
     const { code } = req.body;
-
-    if (!code) {
-      return res.status(400).json({ error: 'License code is required' });
-    }
 
     const licenseRef = db.collection('licenses').doc(code);
     const licenseDoc = await licenseRef.get();
