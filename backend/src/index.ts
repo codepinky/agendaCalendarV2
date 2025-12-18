@@ -48,7 +48,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api', apiLimiter);
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+app.use('/api-docs', swaggerUi.serve);
+app.get('/api-docs', swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Agenda Calendar API Documentation',
 }));
