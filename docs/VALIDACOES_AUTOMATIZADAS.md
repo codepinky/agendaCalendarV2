@@ -257,3 +257,5 @@ Os scripts podem ser integrados em pipelines CI/CD:
 - [ ] Corrigir falhas (se houver)
 - [ ] Executar testes manuais
 
+
+

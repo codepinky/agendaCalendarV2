@@ -166,3 +166,5 @@ Slot: 09:00 - 10:00, maxBookings = 3
 
 **Pronto para testar!** 🚀
 
+
+

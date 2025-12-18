@@ -35,7 +35,8 @@ function PublicSchedule() {
       const response = await api.get(`/bookings/slots/${publicLink}`);
       setSlots(response.data.slots || []);
     } catch (err: any) {
-      setError(err.response?.data?.error || labels.errorGeneric);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -87,7 +88,10 @@ function PublicSchedule() {
       setBooking({ clientName: '', clientEmail: '', clientPhone: '', notes: '' });
       loadAvailableSlots();
     } catch (err: any) {
-      setError(err.response?.data?.error || labels.errorGeneric);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
+      setError(errorMessage);
+      // Auto-hide error after 5 seconds
+      setTimeout(() => setError(''), 5000);
     } finally {
       setSubmitting(false);
     }

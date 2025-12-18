@@ -58,3 +58,5 @@ Os recursos de rede (VCN, Subnet, etc.) já foram criados em São Paulo. Você p
 
 
 
+
+

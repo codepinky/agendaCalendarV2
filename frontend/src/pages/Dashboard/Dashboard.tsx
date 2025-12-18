@@ -25,6 +25,11 @@ function Dashboard() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [creatingSlot, setCreatingSlot] = useState(false);
+  const [deletingSlotId, setDeletingSlotId] = useState<string | null>(null);
+  const [copyingLink, setCopyingLink] = useState(false);
+  const [connectingGoogle, setConnectingGoogle] = useState(false);
+  const [disconnectingGoogle, setDisconnectingGoogle] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -98,6 +103,7 @@ function Dashboard() {
       }
     }
 
+    setCreatingSlot(true);
     try {
       await api.post('/slots', {
         date: slotForm.date,
@@ -110,37 +116,55 @@ function Dashboard() {
       setSuccess('Horário criado com sucesso!');
       setShowSlotModal(false);
       setSlotForm({ date: '', startTime: '', endTime: '', bufferMinutes: '0' });
-      loadSlots();
-      loadBookings();
+      await loadSlots();
+      await loadBookings();
     } catch (err: any) {
-      setError(err.response?.data?.error || labels.errorGeneric);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
+      setError(errorMessage);
+    } finally {
+      setCreatingSlot(false);
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (user?.publicLink) {
-      const link = `${window.location.origin}/schedule/${user.publicLink}`;
-      navigator.clipboard.writeText(link);
-      setSuccess('Link copiado!');
+      setCopyingLink(true);
+      try {
+        const link = `${window.location.origin}/schedule/${user.publicLink}`;
+        await navigator.clipboard.writeText(link);
+        setSuccess('Link copiado!');
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err) {
+        setError('Erro ao copiar link');
+      } finally {
+        setCopyingLink(false);
+      }
     }
   };
 
   const handleConnectGoogleCalendar = async () => {
+    setConnectingGoogle(true);
     try {
       const response = await api.get('/google-calendar/auth');
       window.location.href = response.data.authUrl;
     } catch (err: any) {
-      setError(err.response?.data?.error || labels.errorGeneric);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
+      setError(errorMessage);
+      setConnectingGoogle(false);
     }
   };
 
   const handleDisconnectGoogleCalendar = async () => {
+    setDisconnectingGoogle(true);
     try {
       await api.post('/google-calendar/disconnect');
       setSuccess('Google Calendar desconectado');
-      loadUserData();
+      await loadUserData();
     } catch (err: any) {
-      setError(err.response?.data?.error || labels.errorGeneric);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
+      setError(errorMessage);
+    } finally {
+      setDisconnectingGoogle(false);
     }
   };
 
@@ -168,8 +192,17 @@ function Dashboard() {
         </Col>
       </Row>
 
-      {error && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">{success}</Alert>}
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError('')}>
+          <Alert.Heading>Erro</Alert.Heading>
+          <p>{error}</p>
+        </Alert>
+      )}
+      {success && (
+        <Alert variant="success" dismissible onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
       <Row className="dashboard-section">
         <Col md={6}>
@@ -183,7 +216,9 @@ function Dashboard() {
                   <p className="dashboard-link">
                     {window.location.origin}/schedule/{user.publicLink}
                   </p>
-                  <Button onClick={handleCopyLink}>{labels.copyLink}</Button>
+                  <Button onClick={handleCopyLink} disabled={copyingLink}>
+                    {copyingLink ? labels.loading : labels.copyLink}
+                  </Button>
                 </>
               ) : (
                 <p>Gerando link...</p>
@@ -201,14 +236,16 @@ function Dashboard() {
               {user?.googleCalendarConnected ? (
                 <>
                   <Alert variant="success">{labels.googleCalendarConnected}</Alert>
-                  <Button variant="danger" onClick={handleDisconnectGoogleCalendar}>
-                    {labels.disconnectGoogleCalendar}
+                  <Button variant="danger" onClick={handleDisconnectGoogleCalendar} disabled={disconnectingGoogle}>
+                    {disconnectingGoogle ? labels.loading : labels.disconnectGoogleCalendar}
                   </Button>
                 </>
               ) : (
                 <>
                   <Alert variant="warning">{labels.googleCalendarNotConnected}</Alert>
-                  <Button onClick={handleConnectGoogleCalendar}>{labels.connectGoogleCalendar}</Button>
+                  <Button onClick={handleConnectGoogleCalendar} disabled={connectingGoogle}>
+                    {connectingGoogle ? labels.loading : labels.connectGoogleCalendar}
+                  </Button>
                 </>
               )}
             </Card.Body>
@@ -341,10 +378,12 @@ function Dashboard() {
             />
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowSlotModal(false)}>
+            <Button variant="secondary" onClick={() => setShowSlotModal(false)} disabled={creatingSlot}>
               {labels.cancel}
             </Button>
-            <Button type="submit">{labels.save}</Button>
+            <Button type="submit" disabled={creatingSlot}>
+              {creatingSlot ? labels.loading : labels.save}
+            </Button>
           </Modal.Footer>
         </Form>
       </Modal>

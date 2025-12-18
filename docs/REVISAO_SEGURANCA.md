@@ -322,3 +322,5 @@ Isso já cobre 80% das vulnerabilidades comuns.
 - [Express Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)
 - [Firebase Security Rules](https://firebase.google.com/docs/rules)
 
+
+

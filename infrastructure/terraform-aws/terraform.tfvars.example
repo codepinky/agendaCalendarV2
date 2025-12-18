@@ -13,3 +13,5 @@ ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAB... user@machine"
 ansible_user = "ec2-user"
 
 
+
+

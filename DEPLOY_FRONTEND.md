@@ -71,3 +71,5 @@ firebase deploy --only hosting
 - O frontend já está configurado com a API URL: `https://agendacalendar.duckdns.org/api`
 - Após o deploy, tudo deve funcionar automaticamente!
 
+
+

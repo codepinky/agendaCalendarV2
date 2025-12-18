@@ -14,12 +14,23 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
     // maxBookings sempre será 1 (removido do frontend, mantido para compatibilidade)
 
     if (!date || !startTime || !endTime) {
-      return res.status(400).json({ error: 'Date, startTime and endTime are required' });
+      const missingFields = [];
+      if (!date) missingFields.push('data');
+      if (!startTime) missingFields.push('hora de início');
+      if (!endTime) missingFields.push('hora de fim');
+      
+      return res.status(400).json({ 
+        error: 'Todos os campos são obrigatórios',
+        details: `Campos faltando: ${missingFields.join(', ')}`
+      });
     }
 
     // Validate and sanitize
     if (!validateDate(date)) {
-      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+      return res.status(400).json({ 
+        error: 'Formato de data inválido',
+        details: 'Use o formato YYYY-MM-DD (exemplo: 2025-12-20)'
+      });
     }
 
     // Validate date is not in the past
@@ -29,7 +40,10 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
     slotDate.setHours(0, 0, 0, 0);
     
     if (slotDate < today) {
-      return res.status(400).json({ error: 'Cannot create slot in the past' });
+      return res.status(400).json({ 
+        error: 'Não é possível criar horário para uma data no passado',
+        details: 'Selecione uma data de hoje ou futura'
+      });
     }
 
     // If date is today, validate that times are not in the past
@@ -40,12 +54,22 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
       slotStartTime.setHours(startHour, startMin, 0, 0);
       
       if (slotStartTime < now) {
-        return res.status(400).json({ error: 'Cannot create slot with start time in the past' });
+        return res.status(400).json({ 
+          error: 'Não é possível criar horário com hora no passado',
+          details: `A hora de início (${startTime}) já passou. Selecione uma hora futura.`
+        });
       }
     }
 
     if (!validateTime(startTime) || !validateTime(endTime)) {
-      return res.status(400).json({ error: 'Invalid time format. Use HH:mm' });
+      const invalidFields = [];
+      if (!validateTime(startTime)) invalidFields.push('hora de início');
+      if (!validateTime(endTime)) invalidFields.push('hora de fim');
+      
+      return res.status(400).json({ 
+        error: 'Formato de hora inválido',
+        details: `Use o formato HH:mm (exemplo: 14:30) para: ${invalidFields.join(', ')}`
+      });
     }
 
     const sanitizedDate = sanitizeString(date);
@@ -54,7 +78,10 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
 
     // Validate endTime > startTime
     if (endTime <= startTime) {
-      return res.status(400).json({ error: 'End time must be after start time' });
+      return res.status(400).json({ 
+        error: 'A hora de fim deve ser posterior à hora de início',
+        details: `Hora de início: ${startTime}, Hora de fim: ${endTime}`
+      });
     }
 
     // Validate bufferMinutes (must be >= 0 and reasonable, max 24 hours)
@@ -77,31 +104,46 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
     
     // Handle conflict errors (direct overlap or buffer violations)
     if (error.message && error.message.includes('Time slot conflicts with existing slot')) {
-      return res.status(409).json({ error: error.message });
+      return res.status(409).json({ 
+        error: 'Conflito de horário',
+        details: error.message
+      });
     }
 
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro ao criar o horário. Tente novamente mais tarde.'
+    });
   }
 };
 
 export const getSlotsHandler = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ 
+        error: 'Não autorizado',
+        details: 'Você precisa estar autenticado para acessar esta informação'
+      });
     }
 
     const slots = await getSlots(req.user.uid);
     return res.json(slots);
   } catch (error) {
     console.error('Error getting slots:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro ao buscar os horários. Tente novamente mais tarde.'
+    });
   }
 };
 
 export const deleteSlotHandler = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ 
+        error: 'Não autorizado',
+        details: 'Você precisa estar autenticado para acessar esta informação'
+      });
     }
 
     const { id } = req.params;
@@ -112,14 +154,23 @@ export const deleteSlotHandler = async (req: AuthRequest, res: Response) => {
     console.error('Error deleting slot:', error);
     
     if (error.message === 'Slot not found') {
-      return res.status(404).json({ error: error.message });
+      return res.status(404).json({ 
+        error: 'Horário não encontrado',
+        details: 'O horário que você está tentando deletar não existe mais'
+      });
     }
     
     if (error.message.includes('Cannot delete')) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ 
+        error: 'Não é possível deletar este horário',
+        details: error.message
+      });
     }
 
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro ao deletar o horário. Tente novamente mais tarde.'
+    });
   }
 };
 

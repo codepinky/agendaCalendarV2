@@ -11,17 +11,32 @@ export const register = async (req: Request, res: Response) => {
 
     // Validation
     if (!email || !password || !name || !licenseCode) {
-      return res.status(400).json({ error: 'All fields are required' });
+      const missingFields = [];
+      if (!email) missingFields.push('email');
+      if (!password) missingFields.push('senha');
+      if (!name) missingFields.push('nome');
+      if (!licenseCode) missingFields.push('código de licença');
+      
+      return res.status(400).json({ 
+        error: 'Todos os campos são obrigatórios',
+        details: `Campos faltando: ${missingFields.join(', ')}`
+      });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      return res.status(400).json({ 
+        error: 'A senha deve ter pelo menos 6 caracteres',
+        details: `Senha fornecida tem ${password.length} caracteres`
+      });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
+      return res.status(400).json({ 
+        error: 'Formato de email inválido',
+        details: 'O email deve estar no formato: exemplo@dominio.com'
+      });
     }
 
     const licenseRef = db.collection('licenses').doc(licenseCode);
@@ -140,22 +155,37 @@ export const register = async (req: Request, res: Response) => {
     
     // Handle transaction errors
     if (error.message === 'LICENSE_NOT_FOUND') {
-      return res.status(404).json({ error: 'License code not found' });
+      return res.status(404).json({ 
+        error: 'Código de licença não encontrado',
+        details: 'Verifique se o código foi digitado corretamente'
+      });
     }
     
     if (error.message === 'LICENSE_NOT_ACTIVE') {
-      return res.status(400).json({ error: 'License is not active' });
+      return res.status(400).json({ 
+        error: 'Código de licença não está ativo',
+        details: 'Esta licença não pode ser usada no momento'
+      });
     }
     
     if (error.message === 'LICENSE_ALREADY_USED') {
-      return res.status(400).json({ error: 'License code already used' });
+      return res.status(400).json({ 
+        error: 'Código de licença já foi utilizado',
+        details: 'Cada código de licença só pode ser usado uma vez. Se você já possui uma conta, faça login.'
+      });
     }
     
     if (error.code === 'auth/email-already-exists') {
-      return res.status(400).json({ error: 'Email already registered' });
+      return res.status(400).json({ 
+        error: 'Este email já está cadastrado',
+        details: 'Se você já possui uma conta, faça login. Caso contrário, use outro email.'
+      });
     }
 
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro inesperado. Tente novamente mais tarde.'
+    });
   }
 };
 
@@ -164,7 +194,14 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      const missingFields = [];
+      if (!email) missingFields.push('email');
+      if (!password) missingFields.push('senha');
+      
+      return res.status(400).json({ 
+        error: 'Email e senha são obrigatórios',
+        details: `Campos faltando: ${missingFields.join(', ')}`
+      });
     }
 
     // Note: Firebase Admin SDK doesn't have signInWithEmailAndPassword
@@ -180,13 +217,19 @@ export const login = async (req: Request, res: Response) => {
 export const getCurrentUser = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ 
+        error: 'Não autorizado',
+        details: 'Você precisa estar autenticado para acessar esta informação'
+      });
     }
 
     const userDoc = await db.collection('users').doc(req.user.uid).get();
 
     if (!userDoc.exists) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ 
+        error: 'Usuário não encontrado',
+        details: 'Seu perfil não foi encontrado no sistema. Entre em contato com o suporte.'
+      });
     }
 
     const userData = userDoc.data() as User;

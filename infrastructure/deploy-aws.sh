@@ -151,3 +151,5 @@ echo "   - t2.micro: 750 horas/mês por 12 meses"
 echo "   - 30 GB de armazenamento EBS"
 
 
+
+

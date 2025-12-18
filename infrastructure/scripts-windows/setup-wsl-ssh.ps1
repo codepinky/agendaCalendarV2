@@ -110,3 +110,5 @@ Write-Host "   - O SSH precisa ser iniciado manualmente no WSL2" -ForegroundColo
 Write-Host ""
 
 
+
+
