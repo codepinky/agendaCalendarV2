@@ -8,7 +8,7 @@ const router = Router();
 // All slots routes require authentication
 router.use(authenticate);
 
-router.post('/', validateCreateSlot, createSlotHandler);
+router.post('/', ...validateCreateSlot, createSlotHandler);
 router.get('/', getSlotsHandler);
 router.delete('/:id', deleteSlotHandler);
 

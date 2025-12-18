@@ -7,7 +7,7 @@ const router = Router();
 
 // Public routes
 router.get('/slots/:publicLink', getAvailableSlots);
-router.post('/', validateCreateBooking, createBookingHandler);
+router.post('/', ...validateCreateBooking, createBookingHandler);
 
 // Protected routes (require authentication)
 router.get('/my-bookings', authenticate, getMyBookings);

@@ -7,7 +7,8 @@ import { validateRegister } from '../middleware/validation';
 const router = Router();
 
 // Rate limiting no registro (5 tentativas por hora)
-router.post('/register', registerLimiter, validateRegister, register);
+// express-validator retorna array de middlewares, então usamos spread
+router.post('/register', registerLimiter, ...validateRegister, register);
 router.post('/login', login);
 router.get('/me', authenticate, getCurrentUser);
 
