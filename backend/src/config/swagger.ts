@@ -244,18 +244,14 @@ const swaggerDefinition = {
   ],
 };
 
-// swagger-jsdoc precisa ler os arquivos fonte (.ts) para extrair JSDoc
-// Em produção, copiamos os arquivos .ts também para que o Swagger funcione
-const routesPath = path.join(process.cwd(), 'src/routes/*.ts');
-const distRoutesPath = path.join(process.cwd(), 'dist/routes/*.js');
-
-// Tentar src primeiro (desenvolvimento), depois dist (produção se src não existir)
-const fs = require('fs');
-const srcExists = fs.existsSync(path.join(process.cwd(), 'src/routes'));
+// swagger-jsdoc pode ler comentários JSDoc dos arquivos .js compilados
+// (TypeScript preserva comentários quando removeComments: false)
+// Usar dist/routes/*.js que sempre existe em produção
+const routesPath = path.join(process.cwd(), 'dist/routes/*.js');
 
 const options = {
   definition: swaggerDefinition,
-  apis: srcExists ? [routesPath] : [distRoutesPath],
+  apis: [routesPath],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
