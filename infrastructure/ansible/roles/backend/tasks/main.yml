@@ -9,6 +9,7 @@
   loop:
     - "{{ backend_dir }}"
     - "{{ backend_dir }}/logs"
+  tags: [backend, deploy]
 
 - name: Install rsync (if not installed)
   dnf:
@@ -16,6 +17,7 @@
     state: present
   when: ansible_facts['distribution'] == "Amazon"
   ignore_errors: yes
+  tags: [backend]
 
 - name: Install rsync (Oracle Linux)
   yum:
@@ -23,6 +25,7 @@
     state: present
   when: ansible_facts['distribution'] != "Amazon"
   ignore_errors: yes
+  tags: [backend]
 
 - name: Copy backend files from local machine
   synchronize:
@@ -37,6 +40,7 @@
       - "--exclude=*.log"
   delegate_to: localhost
   become: no
+  tags: [backend, deploy]
 
 - name: Create backend .env file
   template:
@@ -45,6 +49,7 @@
     owner: "{{ app_user }}"
     group: "{{ app_user }}"
     mode: '0600'
+  tags: [backend]
 
 - name: Install backend dependencies
   npm:
@@ -53,6 +58,7 @@
   environment:
     npm_config_jobs: "{{ npm_config_jobs | default(omit) }}"
   become_user: "{{ app_user }}"
+  tags: [backend, deploy]
 
 - name: Build backend
   command: npm run build
@@ -62,6 +68,7 @@
     npm_config_jobs: "{{ npm_config_jobs | default(omit) }}"
     NODE_OPTIONS: "--max-old-space-size={{ node_max_old_space_size_mb | default(1536) }}"
   become_user: "{{ app_user }}"
+  tags: [backend, deploy]
 
 - name: Create systemd service file
   template:
@@ -71,12 +78,14 @@
   notify:
     - reload systemd
     - restart backend
+  tags: [backend]
 
 - name: Enable and start backend service
   systemd:
     name: agenda-calendar-backend
     enabled: yes
     state: started
+  tags: [backend, deploy]
 
 - name: Wait for backend to be ready
   uri:
@@ -87,10 +96,12 @@
   retries: 30
   delay: 3
   ignore_errors: yes
+  tags: [backend, deploy]
 
 - name: Display backend information
   debug:
     msg:
       - "Backend is running on port 3000"
       - "Health check: http://{{ ansible_default_ipv4.address }}:3000/health"
+  tags: [backend, deploy]
 

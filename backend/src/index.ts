@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import { logger } from './utils/logger';
 import { apiLimiter } from './middleware/rateLimit';
+import { swaggerSpec } from './config/swagger';
 
 dotenv.config();
 
@@ -44,6 +46,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting geral (aplica a todas as rotas /api)
 app.use('/api', apiLimiter);
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Agenda Calendar API Documentation',
+}));
 
 // Routes
 import authRoutes from './routes/auth';
