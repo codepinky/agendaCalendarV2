@@ -1,12 +1,13 @@
 import { db } from '../services/firebase';
 import { AvailableSlot, Booking } from '../types';
+import type admin from 'firebase-admin';
 
 export const processBookingTransaction = async (
   userId: string,
   slotId: string,
   bookingData: Omit<Booking, 'id' | 'orderNumber' | 'reservedAt' | 'confirmedAt'>
 ): Promise<{ success: boolean; booking?: Booking; error?: string }> => {
-  return await db.runTransaction(async (transaction) => {
+  return await db.runTransaction(async (transaction: admin.firestore.Transaction) => {
     const slotRef = db.collection('users').doc(userId).collection('availableSlots').doc(slotId);
     const slotDoc = await transaction.get(slotRef);
 

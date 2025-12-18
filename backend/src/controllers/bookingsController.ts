@@ -18,7 +18,12 @@ export const getAvailableSlots = async (req: any, res: Response) => {
     const result = await getAvailableSlotsByPublicLink(publicLink);
     return res.json(result);
   } catch (error: any) {
-    console.error('Error getting available slots:', error);
+    logger.error('Error getting available slots', {
+      error: error.message,
+      stack: error.stack,
+      publicLink: req.params.publicLink,
+      ip: req.ip,
+    });
     
     if (error.message === 'Public link not found') {
       return res.status(404).json({ error: error.message });
@@ -49,7 +54,13 @@ export const createBookingHandler = async (req: any, res: Response) => {
       message: 'Booking confirmed successfully',
     });
   } catch (error: any) {
-    console.error('Error creating booking:', error);
+    logger.error('Error creating booking', {
+      error: error.message,
+      stack: error.stack,
+      publicLink: req.body.publicLink,
+      slotId: req.body.slotId,
+      ip: req.ip,
+    });
     
     if (error.message === 'Public link not found') {
       return res.status(404).json({ 

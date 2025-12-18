@@ -2,7 +2,8 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { createSlot, getSlots, deleteSlot } from '../services/slotsService';
 import { AvailableSlot } from '../types';
-import { validateDate, validateTime, sanitizeString } from '../utils/validation';
+import { sanitizeString } from '../utils/validation';
+import { logger } from '../utils/logger';
 
 export const createSlotHandler = async (req: AuthRequest, res: Response) => {
   try {
@@ -55,7 +56,12 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
 
     return res.status(201).json(slot);
   } catch (error: any) {
-    console.error('Error creating slot:', error);
+    logger.error('Error creating slot', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.uid,
+      ip: req.ip,
+    });
     
     // Handle conflict errors (direct overlap or buffer violations)
     if (error.message && error.message.includes('Time slot conflicts with existing slot')) {
@@ -83,8 +89,13 @@ export const getSlotsHandler = async (req: AuthRequest, res: Response) => {
 
     const slots = await getSlots(req.user.uid);
     return res.json(slots);
-  } catch (error) {
-    console.error('Error getting slots:', error);
+  } catch (error: any) {
+    logger.error('Error getting slots', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.uid,
+      ip: req.ip,
+    });
     return res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: 'Ocorreu um erro ao buscar os horários. Tente novamente mais tarde.'
@@ -106,7 +117,13 @@ export const deleteSlotHandler = async (req: AuthRequest, res: Response) => {
     
     return res.json({ success: true });
   } catch (error: any) {
-    console.error('Error deleting slot:', error);
+    logger.error('Error deleting slot', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.uid,
+      slotId: req.params.id,
+      ip: req.ip,
+    });
     
     if (error.message === 'Slot not found') {
       return res.status(404).json({ 

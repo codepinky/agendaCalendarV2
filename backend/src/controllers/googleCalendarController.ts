@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { db } from '../services/firebase';
 import { getAuthUrl, getTokensFromCode, getCalendarId } from '../services/googleCalendarService';
+import { logger } from '../utils/logger';
 
 export const initiateAuth = async (req: AuthRequest, res: Response) => {
   try {
@@ -12,9 +13,17 @@ export const initiateAuth = async (req: AuthRequest, res: Response) => {
     const authUrl = getAuthUrl(req.user.uid);
     
     return res.json({ authUrl });
-  } catch (error) {
-    console.error('Error initiating Google Calendar auth:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (error: any) {
+    logger.error('Error initiating Google Calendar auth', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.uid,
+      ip: req.ip,
+    });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro ao iniciar autenticação do Google Calendar. Tente novamente mais tarde.'
+    });
   }
 };
 
@@ -50,8 +59,14 @@ export const handleCallback = async (req: any, res: Response) => {
     // Redirect to frontend
     const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
     return res.redirect(`${frontendUrl}/dashboard?googleCalendarConnected=true`);
-  } catch (error) {
-    console.error('Error handling Google Calendar callback:', error);
+  } catch (error: any) {
+    logger.error('Error handling Google Calendar callback', {
+      error: error.message,
+      stack: error.stack,
+      code: req.query.code,
+      state: req.query.state,
+      ip: req.ip,
+    });
     const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
     return res.redirect(`${frontendUrl}/dashboard?googleCalendarError=true`);
   }
@@ -71,9 +86,17 @@ export const disconnect = async (req: AuthRequest, res: Response) => {
     });
 
     return res.json({ success: true });
-  } catch (error) {
-    console.error('Error disconnecting Google Calendar:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (error: any) {
+    logger.error('Error disconnecting Google Calendar', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.uid,
+      ip: req.ip,
+    });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro ao desconectar o Google Calendar. Tente novamente mais tarde.'
+    });
   }
 };
 

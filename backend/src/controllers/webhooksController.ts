@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { db } from '../services/firebase';
 import { License } from '../types';
 import { logger, logSecurityError } from '../utils/logger';
+import type admin from 'firebase-admin';
 
 type KiwifyPayload = {
   order_id?: string;
@@ -158,7 +159,7 @@ export const kiwifyWebhook = async (req: Request, res: Response) => {
 
     const orderIndexRef = db.collection('kiwify_orders').doc(orderId);
 
-    const result = await db.runTransaction(async (tx) => {
+    const result = await db.runTransaction(async (tx: admin.firestore.Transaction) => {
       const existing = await tx.get(orderIndexRef);
       if (existing.exists) {
         const data = existing.data() as { licenseCode?: string } | undefined;

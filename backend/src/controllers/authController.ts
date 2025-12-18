@@ -4,6 +4,7 @@ import { User } from '../types';
 import { AuthRequest } from '../middleware/auth';
 import crypto from 'crypto';
 import { logger, logSuspiciousActivity, logSecurityError } from '../utils/logger';
+import type admin from 'firebase-admin';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -14,7 +15,7 @@ export const register = async (req: Request, res: Response) => {
 
     // Use transaction to ensure atomicity (prevents race condition)
     // Only one person can use the same license code at the same time
-    const result = await db.runTransaction(async (tx) => {
+    const result = await db.runTransaction(async (tx: admin.firestore.Transaction) => {
       // Check license in transaction
       const licenseDoc = await tx.get(licenseRef);
 
@@ -179,9 +180,16 @@ export const login = async (req: Request, res: Response) => {
     // This should be handled by Firebase Auth on the frontend
     // Backend will verify the token sent from frontend
     return res.status(501).json({ error: 'Login should be handled by Firebase Auth on frontend' });
-  } catch (error) {
-    console.error('Error in login:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (error: any) {
+    logger.error('Error in login', {
+      error: error.message,
+      stack: error.stack,
+      ip: req.ip,
+    });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro ao processar o login. Tente novamente mais tarde.'
+    });
   }
 };
 
@@ -209,9 +217,17 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
       ...userData,
       id: req.user.uid,
     });
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (error: any) {
+    logger.error('Error getting current user', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.uid,
+      ip: req.ip,
+    });
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: 'Ocorreu um erro ao buscar os dados do usuário. Tente novamente mais tarde.'
+    });
   }
 };
 
