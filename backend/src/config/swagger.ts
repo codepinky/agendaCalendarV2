@@ -244,16 +244,18 @@ const swaggerDefinition = {
   ],
 };
 
-// Usar caminho relativo que funciona tanto em dev quanto em produção
 // swagger-jsdoc precisa ler os arquivos fonte (.ts) para extrair JSDoc
-// Mas em produção, os arquivos .ts não existem, então precisamos usar os .js compilados
-// Solução: usar caminho relativo ao diretório de execução
+// Em produção, copiamos os arquivos .ts também para que o Swagger funcione
+const routesPath = path.join(process.cwd(), 'src/routes/*.ts');
+const distRoutesPath = path.join(process.cwd(), 'dist/routes/*.js');
+
+// Tentar src primeiro (desenvolvimento), depois dist (produção se src não existir)
+const fs = require('fs');
+const srcExists = fs.existsSync(path.join(process.cwd(), 'src/routes'));
+
 const options = {
   definition: swaggerDefinition,
-  apis: [
-    path.join(process.cwd(), 'dist/routes/*.js'),
-    path.join(process.cwd(), 'src/routes/*.ts'),
-  ],
+  apis: srcExists ? [routesPath] : [distRoutesPath],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
