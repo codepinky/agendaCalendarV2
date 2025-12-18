@@ -1,4 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'path';
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -243,13 +244,15 @@ const swaggerDefinition = {
   ],
 };
 
+// Usar caminho relativo que funciona tanto em dev quanto em produção
+// swagger-jsdoc precisa ler os arquivos fonte (.ts) para extrair JSDoc
+// Mas em produção, os arquivos .ts não existem, então precisamos usar os .js compilados
+// Solução: usar caminho relativo ao diretório de execução
 const options = {
   definition: swaggerDefinition,
   apis: [
-    './dist/routes/*.js',
-    './src/routes/*.ts',
-    './dist/controllers/*.js',
-    './src/controllers/*.ts',
+    path.join(process.cwd(), 'dist/routes/*.js'),
+    path.join(process.cwd(), 'src/routes/*.ts'),
   ],
 };
 
