@@ -1,7 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import { SwaggerDefinition } from 'swagger-jsdoc';
 
-const swaggerDefinition: SwaggerDefinition = {
+const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
     title: 'Agenda Calendar API',
