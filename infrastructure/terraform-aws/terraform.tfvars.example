@@ -11,3 +11,5 @@ ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAB... user@machine"
 
 # Usuário para Ansible (padrão: ec2-user para Amazon Linux)
 ansible_user = "ec2-user"
+
+

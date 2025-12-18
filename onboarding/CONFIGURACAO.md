@@ -242,3 +242,5 @@ E **feche**:
 
 - Nunca commite `inventory.ini` e `group_vars/all.yml` (contêm IPs e segredos). O `.gitignore` do repositório já ignora esses arquivos dentro de `onboarding/`.\n+
 
+
+

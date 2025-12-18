@@ -10,6 +10,9 @@ interface InputProps {
   error?: string;
   required?: boolean;
   className?: string;
+  min?: string;
+  max?: string;
+  helpText?: string;
 }
 
 function Input({ 
@@ -20,7 +23,10 @@ function Input({
   onChange, 
   error, 
   required = false,
-  className = '' 
+  className = '',
+  min,
+  max,
+  helpText
 }: InputProps) {
   return (
     <Form.Group className={`shared-input ${className}`}>
@@ -31,11 +37,16 @@ function Input({
         value={value}
         onChange={onChange}
         isInvalid={!!error}
+        min={min}
+        max={max}
       />
+      {helpText && !error && <Form.Text className="text-muted">{helpText}</Form.Text>}
       {error && <Form.Control.Feedback type="invalid">{error}</Form.Control.Feedback>}
     </Form.Group>
   );
 }
 
 export default Input;
+
+
 

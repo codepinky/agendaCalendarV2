@@ -61,6 +61,8 @@ export const labels = {
   startTime: 'Horário de início',
   endTime: 'Horário de fim',
   maxBookings: 'Máximo de agendamentos',
+  bufferMinutes: 'Intervalo entre agendamentos (minutos)',
+  bufferMinutesHelp: 'Tempo mínimo entre este horário e o próximo (ex: 30, 60)',
   
   // Booking
   bookAppointment: 'Agendar',

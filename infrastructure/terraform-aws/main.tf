@@ -147,3 +147,5 @@ resource "aws_instance" "agenda_calendar_vm" {
     encrypted   = false # Encryption pode ter custo adicional
   }
 }
+
+

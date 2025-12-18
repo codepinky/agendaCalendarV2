@@ -199,3 +199,5 @@ Posso criar um script que tenta criar a VM automaticamente a cada X horas até c
 
 **AWS/Google/Azure não são sempre free** - apenas trials temporários.
 
+
+

@@ -39,6 +39,7 @@ export interface AvailableSlot {
   status: 'available' | 'reserved' | 'confirmed' | 'cancelled';
   createdAt: string;
   maxBookings: number;
+  bufferMinutes?: number; // Intervalo em minutos entre agendamentos (ex: 30, 60)
 }
 
 export interface Booking {
@@ -62,4 +63,6 @@ export interface ApiError {
   message: string;
   code?: string;
 }
+
+
 

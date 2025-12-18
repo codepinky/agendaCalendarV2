@@ -15,17 +15,23 @@ export const getAvailableSlotsByPublicLink = async (publicLink: string) => {
   const userId = userSnapshot.docs[0].id;
   const slotsRef = db.collection('users').doc(userId).collection('availableSlots');
   
-  // Get available slots
-  const slotsSnapshot = await slotsRef
-    .where('status', 'in', ['available', 'reserved'])
-    .orderBy('date')
-    .orderBy('startTime')
-    .get();
+  // Get all slots and filter/order in memory (avoids Firestore index requirement)
+  const slotsSnapshot = await slotsRef.get();
 
-  const slots = slotsSnapshot.docs.map(doc => ({
+  const allSlots = slotsSnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
   } as AvailableSlot));
+
+  // Filter by status and sort in memory
+  const slots = allSlots
+    .filter(slot => slot.status === 'available' || slot.status === 'reserved')
+    .sort((a, b) => {
+      if (a.date !== b.date) {
+        return a.date.localeCompare(b.date);
+      }
+      return a.startTime.localeCompare(b.startTime);
+    });
 
   // Filter out fully booked slots
   const availableSlots = [];
@@ -106,5 +112,24 @@ export const createBooking = async (
     userId,
     slot,
   };
+};
+
+export const getUserBookings = async (userId: string) => {
+  const bookingsRef = db.collection('users').doc(userId).collection('bookings');
+  const snapshot = await bookingsRef.get();
+  
+  const bookings = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as Booking));
+  
+  // Sort by date (descending) and then by startTime (ascending)
+  // Most recent bookings first, then by time within the same date
+  return bookings.sort((a, b) => {
+    if (a.date !== b.date) {
+      return b.date.localeCompare(a.date); // Descending (newest first)
+    }
+    return a.startTime.localeCompare(b.startTime); // Ascending (earlier first)
+  });
 };
 

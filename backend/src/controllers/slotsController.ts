@@ -10,7 +10,8 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { date, startTime, endTime, maxBookings = 1 } = req.body;
+    const { date, startTime, endTime, bufferMinutes = 0 } = req.body;
+    // maxBookings sempre será 1 (removido do frontend, mantido para compatibilidade)
 
     if (!date || !startTime || !endTime) {
       return res.status(400).json({ error: 'Date, startTime and endTime are required' });
@@ -19,6 +20,28 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
     // Validate and sanitize
     if (!validateDate(date)) {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    // Validate date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const slotDate = new Date(date);
+    slotDate.setHours(0, 0, 0, 0);
+    
+    if (slotDate < today) {
+      return res.status(400).json({ error: 'Cannot create slot in the past' });
+    }
+
+    // If date is today, validate that times are not in the past
+    if (slotDate.getTime() === today.getTime()) {
+      const now = new Date();
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const slotStartTime = new Date();
+      slotStartTime.setHours(startHour, startMin, 0, 0);
+      
+      if (slotStartTime < now) {
+        return res.status(400).json({ error: 'Cannot create slot with start time in the past' });
+      }
     }
 
     if (!validateTime(startTime) || !validateTime(endTime)) {
@@ -34,12 +57,16 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'End time must be after start time' });
     }
 
+    // Validate bufferMinutes (must be >= 0 and reasonable, max 24 hours)
+    const buffer = Math.max(0, Math.min(Number(bufferMinutes) || 0, 1440)); // Max 24 hours
+
     const slotData: Omit<AvailableSlot, 'id' | 'createdAt'> = {
       date: sanitizedDate,
       startTime: sanitizedStartTime,
       endTime: sanitizedEndTime,
       status: 'available',
-      maxBookings: Number(maxBookings) || 1,
+      maxBookings: 1, // Sempre 1 agendamento por slot
+      bufferMinutes: buffer,
     };
 
     const slot = await createSlot(req.user.uid, slotData);
@@ -48,7 +75,8 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Error creating slot:', error);
     
-    if (error.message === 'Time slot conflicts with existing slot') {
+    // Handle conflict errors (direct overlap or buffer violations)
+    if (error.message && error.message.includes('Time slot conflicts with existing slot')) {
       return res.status(409).json({ error: error.message });
     }
 
@@ -94,4 +122,5 @@ export const deleteSlotHandler = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 

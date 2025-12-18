@@ -39,3 +39,5 @@
       - "Swap configurado:"
       - "{{ swap_status.stdout | default('(sem saída)') }}"
 
+
+

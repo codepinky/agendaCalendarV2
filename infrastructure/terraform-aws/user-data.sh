@@ -61,3 +61,5 @@ echo "📋 Próximos passos:"
 echo "1. Aguarde alguns minutos para o sistema estar totalmente pronto"
 echo "2. Execute o Ansible para provisionamento completo"
 echo "3. Configure o backend e N8N"
+
+

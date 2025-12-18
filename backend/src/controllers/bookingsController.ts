@@ -1,6 +1,8 @@
 import { Response } from 'express';
-import { getAvailableSlotsByPublicLink, createBooking } from '../services/bookingsService';
+import { AuthRequest } from '../middleware/auth';
+import { getAvailableSlotsByPublicLink, createBooking, getUserBookings } from '../services/bookingsService';
 import { validateEmail, validatePhone, sanitizeString, sanitizeEmail } from '../utils/validation';
+import { logger } from '../utils/logger';
 
 export const getAvailableSlots = async (req: any, res: Response) => {
   try {
@@ -66,6 +68,33 @@ export const createBookingHandler = async (req: any, res: Response) => {
       return res.status(409).json({ error: error.message });
     }
 
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getMyBookings = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const bookings = await getUserBookings(req.user.uid);
+    
+    logger.info('User bookings retrieved', { 
+      userId: req.user.uid, 
+      count: bookings.length,
+      ip: req.ip 
+    });
+    
+    return res.json({ bookings });
+  } catch (error: any) {
+    logger.error('Error getting user bookings', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.uid,
+      ip: req.ip,
+    });
+    
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

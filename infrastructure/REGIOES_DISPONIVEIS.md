@@ -56,3 +56,5 @@ Os recursos de rede (VCN, Subnet, etc.) já foram criados em São Paulo. Você p
 - Deixar como está e tentar outra região (criará nova VCN)
 - Ou destruir tudo e começar de novo: `terraform destroy`
 
+
+

@@ -171,3 +171,5 @@ ssh opc@SEU_IP 'cd /opt/agenda-calendar/n8n && docker-compose ps'
 
 Tudo configurado. Execute o deploy quando estiver pronto!
 
+
+

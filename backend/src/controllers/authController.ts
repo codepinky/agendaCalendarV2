@@ -3,6 +3,7 @@ import { auth, db } from '../services/firebase';
 import { User } from '../types';
 import { AuthRequest } from '../middleware/auth';
 import crypto from 'crypto';
+import { logger, logSuspiciousActivity, logSecurityError } from '../utils/logger';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -17,30 +18,89 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    // Validate license
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
     const licenseRef = db.collection('licenses').doc(licenseCode);
-    const licenseDoc = await licenseRef.get();
+
+    // Use transaction to ensure atomicity (prevents race condition)
+    // Only one person can use the same license code at the same time
+    const result = await db.runTransaction(async (tx) => {
+      // Check license in transaction
+      const licenseDoc = await tx.get(licenseRef);
 
     if (!licenseDoc.exists) {
-      return res.status(404).json({ error: 'License code not found' });
+      logSecurityError('LICENSE_NOT_FOUND', {
+        ip: req.ip,
+        endpoint: '/api/auth/register',
+        licenseCode: licenseCode.substring(0, 8) + '...', // Log parcial por segurança
+      });
+      throw new Error('LICENSE_NOT_FOUND');
     }
 
     const licenseData = licenseDoc.data();
 
     if (licenseData?.status !== 'active') {
-      return res.status(400).json({ error: 'License is not active' });
+      logSecurityError('LICENSE_NOT_ACTIVE', {
+        ip: req.ip,
+        endpoint: '/api/auth/register',
+        licenseCode: licenseCode.substring(0, 8) + '...',
+      });
+      throw new Error('LICENSE_NOT_ACTIVE');
     }
 
     if (licenseData?.usedAt) {
-      return res.status(400).json({ error: 'License code already used' });
+      logSecurityError('LICENSE_ALREADY_USED', {
+        ip: req.ip,
+        endpoint: '/api/auth/register',
+        licenseCode: licenseCode.substring(0, 8) + '...',
+      });
+      throw new Error('LICENSE_ALREADY_USED');
     }
 
-    // Create Firebase Auth user
-    const userRecord = await auth.createUser({
-      email,
-      password,
-      displayName: name,
+      // Mark license as used IMMEDIATELY in transaction (before creating user)
+      // This prevents race condition where two people try to use same code
+      const now = new Date().toISOString();
+      tx.update(licenseRef, {
+        usedAt: now,
+        status: 'inactive',
+      });
+
+      return { success: true };
     });
+
+    // If we get here, license was successfully marked as used
+    // Now create the user (if this fails, we'll need to handle rollback manually)
+    let userRecord;
+    try {
+      userRecord = await auth.createUser({
+        email,
+        password,
+        displayName: name,
+      });
+    } catch (authError: any) {
+      // If user creation fails, we need to rollback the license
+      // (in production, you might want a more sophisticated recovery mechanism)
+      if (authError.code === 'auth/email-already-exists') {
+        // License already marked as used, but email exists
+        // This is a conflict - license is consumed but user exists
+        // In this case, we'll keep license as used (it was valid attempt)
+        return res.status(400).json({ 
+          error: 'Email already registered. Please login instead.' 
+        });
+      }
+      
+      // Other auth errors - rollback license
+      await licenseRef.update({
+        usedAt: null,
+        status: 'active',
+      });
+      
+      throw authError;
+    }
 
     // Generate public link
     const publicLink = crypto.randomBytes(16).toString('hex');
@@ -57,12 +117,6 @@ export const register = async (req: Request, res: Response) => {
 
     await db.collection('users').doc(userRecord.uid).set(userData);
 
-    // Mark license as used
-    await licenseRef.update({
-      usedAt: new Date().toISOString(),
-      status: 'inactive',
-    });
-
     // Get custom token for frontend
     const customToken = await auth.createCustomToken(userRecord.uid);
 
@@ -77,7 +131,25 @@ export const register = async (req: Request, res: Response) => {
       token: customToken,
     });
   } catch (error: any) {
-    console.error('Error registering user:', error);
+    logger.error('Error registering user', {
+      error: error.message,
+      stack: error.stack,
+      ip: req.ip,
+      email: req.body.email?.substring(0, 5) + '...', // Log parcial
+    });
+    
+    // Handle transaction errors
+    if (error.message === 'LICENSE_NOT_FOUND') {
+      return res.status(404).json({ error: 'License code not found' });
+    }
+    
+    if (error.message === 'LICENSE_NOT_ACTIVE') {
+      return res.status(400).json({ error: 'License is not active' });
+    }
+    
+    if (error.message === 'LICENSE_ALREADY_USED') {
+      return res.status(400).json({ error: 'License code already used' });
+    }
     
     if (error.code === 'auth/email-already-exists') {
       return res.status(400).json({ error: 'Email already registered' });

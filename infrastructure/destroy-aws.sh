@@ -66,3 +66,5 @@ echo "   - Key Pair"
 echo ""
 echo "💡 Nota: O VPC padrão não é removido (é gratuito e pode ser usado por outros recursos)"
 
+
+

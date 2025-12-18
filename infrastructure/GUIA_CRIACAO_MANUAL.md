@@ -164,3 +164,5 @@ Após criar a VM, você precisa abrir as portas:
 - [ ] Variáveis atualizadas
 - [ ] Playbook executado com sucesso
 
+
+

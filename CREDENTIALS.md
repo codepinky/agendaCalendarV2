@@ -133,3 +133,5 @@ VITE_FIREBASE_APP_ID=seu-app-id
 - O `FIREBASE_PRIVATE_KEY` deve manter os `\n` (quebras de linha) preservadas
 - O `GOOGLE_REDIRECT_URI` deve corresponder EXATAMENTE ao configurado no Google Cloud Console
 
+
+

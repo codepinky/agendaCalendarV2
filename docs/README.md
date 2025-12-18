@@ -48,3 +48,5 @@ Documentação relacionada à infraestrutura e deploy.
 - **Fazendo deploy na Oracle Cloud?** Veja [`infrastructure/oracle/`](infrastructure/oracle/)
 - **Problemas?** Consulte [`infrastructure/troubleshooting/`](infrastructure/troubleshooting/)
 
+
+

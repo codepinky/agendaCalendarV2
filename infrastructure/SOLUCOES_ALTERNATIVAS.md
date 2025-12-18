@@ -100,3 +100,5 @@ Após conseguir criar a VM (manualmente ou via Terraform):
 2. Configurar Ansible
 3. Executar playbook para provisionar tudo
 
+
+

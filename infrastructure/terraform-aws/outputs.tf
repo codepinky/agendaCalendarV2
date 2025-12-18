@@ -22,3 +22,5 @@ output "ansible_inventory_entry" {
   description = "Ansible inventory entry for this instance"
   value       = "${aws_instance.agenda_calendar_vm.public_ip} ansible_user=${var.ansible_user} ansible_ssh_private_key_file=~/.ssh/id_rsa"
 }
+
+

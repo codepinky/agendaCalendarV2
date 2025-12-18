@@ -219,3 +219,5 @@ ansible_user     = "opc"
 - **Documentação OCI:** https://docs.oracle.com/en-us/iaas/Content/home.htm
 - **Free Tier:** https://www.oracle.com/cloud/free/
 
+
+

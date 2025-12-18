@@ -108,3 +108,5 @@ Write-Host "   - Execute este script toda vez que reiniciar o Windows" -Foregrou
 Write-Host "   - O IP do WSL2 muda a cada reinicialização" -ForegroundColor White
 Write-Host "   - O SSH precisa ser iniciado manualmente no WSL2" -ForegroundColor White
 Write-Host ""
+
+

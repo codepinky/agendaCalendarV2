@@ -21,14 +21,20 @@ export const processBookingTransaction = async (
     }
 
     // Get current bookings count for this slot
+    // IMPORTANT: Count both 'confirmed' and 'pending' bookings to prevent race conditions
+    // If we only count 'confirmed', two simultaneous transactions could both pass
     const bookingsRef = db.collection('users').doc(userId).collection('bookings');
-    const bookingsSnapshot = await transaction.get(
+    const confirmedBookings = await transaction.get(
       bookingsRef.where('slotId', '==', slotId).where('status', '==', 'confirmed')
     );
+    const pendingBookings = await transaction.get(
+      bookingsRef.where('slotId', '==', slotId).where('status', '==', 'pending')
+    );
 
-    const confirmedCount = bookingsSnapshot.size;
+    // Count all active bookings (confirmed + pending) to prevent double booking
+    const totalBookings = confirmedBookings.size + pendingBookings.size;
 
-    if (confirmedCount >= slot.maxBookings) {
+    if (totalBookings >= slot.maxBookings) {
       throw new Error('Slot is fully booked');
     }
 
@@ -36,39 +42,48 @@ export const processBookingTransaction = async (
     const orderNumber = Date.now() + Math.floor(Math.random() * 1000);
     const reservedAt = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+    const confirmedAt = new Date().toISOString();
 
-    // Create booking
+    // Create booking directly as 'confirmed' since we're in an atomic transaction
+    // This ensures the booking is immediately counted in future transactions
     const bookingRef = bookingsRef.doc();
     const newBooking: Omit<Booking, 'id'> = {
       ...bookingData,
       orderNumber,
       reservedAt,
       expiresAt,
-      status: 'pending',
+      status: 'confirmed',
+      confirmedAt,
     };
 
     transaction.set(bookingRef, newBooking);
 
-    // Update slot if needed
-    if (confirmedCount + 1 >= slot.maxBookings) {
+    // Always update the slot to ensure Firestore detects conflicts between concurrent transactions
+    // This forces transaction retry if another booking is being created simultaneously
+    // The update ensures that if two transactions try to book the same slot, one will be retried
+    if (totalBookings + 1 >= slot.maxBookings) {
+      // Slot is now fully booked - update status
       transaction.update(slotRef, { status: 'reserved' });
+    } else {
+      // Update slot with a version field to ensure conflict detection
+      // This ensures Firestore will detect if another transaction modified the slot
+      // We use a partial update that doesn't break the type
+      transaction.update(slotRef, { 
+        // Add a metadata field that helps with conflict detection
+        // This field is optional and won't break existing code
+        _lastBookingAt: new Date().toISOString() 
+      } as Partial<AvailableSlot> & { _lastBookingAt?: string });
     }
-
-    // Confirm booking immediately (since we're in transaction)
-    transaction.update(bookingRef, {
-      status: 'confirmed',
-      confirmedAt: new Date().toISOString(),
-    });
 
     return {
       success: true,
       booking: {
         id: bookingRef.id,
         ...newBooking,
-        status: 'confirmed',
-        confirmedAt: new Date().toISOString(),
       } as Booking,
     };
   });
 };
+
+
 
