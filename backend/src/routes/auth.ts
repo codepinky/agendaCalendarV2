@@ -65,28 +65,41 @@ const router = Router();
  *                 publicLink: "a1b2c3d4e5f6g7h8"
  *               token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       400:
- *         description: ❌ Erro de validação, license inativa, já utilizada ou email já registrado
+ *         description: |
+ *           ❌ Erro de validação ou license inválida. Possíveis causas:
+ *           - License inativa (status !== 'active')
+ *           - License já utilizada (usedAt !== null) ⚠️ **Este é o caso quando você tenta usar um código que já foi usado**
+ *           - Email já registrado no Firebase Auth
+ *           - Erro de validação dos campos (express-validator)
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *             examples:
- *               licenseInactive:
- *                 value:
- *                   error: "Código de licença não está ativo"
- *                   details: "Esta licença não pode ser usada no momento"
- *               licenseUsed:
+ *               licenseAlreadyUsed:
+ *                 summary: "License já foi utilizada (caso mais comum)"
+ *                 description: "Quando você tenta usar um código que já foi usado em um cadastro anterior"
  *                 value:
  *                   error: "Código de licença já foi utilizado"
  *                   details: "Cada código de licença só pode ser usado uma vez. Se você já possui uma conta, faça login."
+ *               licenseInactive:
+ *                 summary: "License inativa"
+ *                 value:
+ *                   error: "Código de licença não está ativo"
+ *                   details: "Esta licença não pode ser usada no momento"
  *               emailExists:
+ *                 summary: "Email já registrado"
  *                 value:
  *                   error: "Email já registrado"
  *                   details: "Este email já está em uso. Por favor, faça login."
  *               validationError:
+ *                 summary: "Erro de validação de campos"
  *                 value:
  *                   error: "Dados inválidos"
  *                   details: "Verifique os dados enviados"
+ *                   errors:
+ *                     - field: "email"
+ *                       message: "Email é obrigatório"
  *       404:
  *         description: ❌ License não encontrada (código não existe no banco)
  *         content:
