@@ -28,6 +28,7 @@ pnpm-debug.log*
 # Env files (sempre locais/segredos)
 **/.env
 **/.env.*
+!**/.env.example
 
 # =========================
 # Ansible (arquivos locais)
