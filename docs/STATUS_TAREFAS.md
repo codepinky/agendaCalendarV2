@@ -57,10 +57,11 @@ Este documento mostra o status de todas as tarefas que posso fazer automaticamen
   - ⚠️ Testes de performance ainda pendentes
 
 #### ✅ Testes Unitários
-- ✅ **Criar testes para serviços principais** (Rodada 6)
+- ✅ **Criar testes para serviços principais** (Rodada 6-7)
   - ✅ `slotsService.ts` (criação, validação, buffer) - 10 testes
-  - ⚠️ `bookingsService.ts` (agendamento, transações) - Pendente
-  - ⚠️ `authController.ts` (cadastro, validação de license) - Pendente
+  - ✅ `bookingsService.ts` (agendamento, transações) - 13 testes
+  - ✅ `transactions.ts` (prevenção de race conditions) - 7 testes
+  - ⚠️ `authController.ts` (cadastro, validação de license) - Pendente (baixa prioridade)
 
 - ✅ **Testes para validações** (Rodada 6)
   - ✅ Validação de email, telefone, data, hora
@@ -126,7 +127,7 @@ Este documento mostra o status de todas as tarefas que posso fazer automaticamen
 
 ## 📊 RESUMO
 
-### ✅ Concluídas: 11 tarefas principais
+### ✅ Concluídas: 13 tarefas principais
 1. ✅ Melhorar mensagens de erro (backend)
 2. ✅ Implementar express-validator
 3. ✅ Validação de assinatura Kiwify
@@ -135,34 +136,44 @@ Este documento mostra o status de todas as tarefas que posso fazer automaticamen
 6. ✅ Confirmações para ações destrutivas
 7. ✅ Validação em tempo real
 8. ✅ Script de teste de validações
-9. ✅ Testes unitários (slotsService + validações)
-10. ✅ Swagger/OpenAPI
-11. ✅ Documentação de variáveis de ambiente
+9. ✅ Testes unitários (slotsService - 10 testes)
+10. ✅ Testes unitários (bookingsService - 13 testes)
+11. ✅ Testes unitários (transactions - 7 testes)
+12. ✅ Swagger/OpenAPI
+13. ✅ Documentação de variáveis de ambiente
 
-### ⏳ Pendentes: 5 tarefas principais
+### ⏳ Pendentes: 3 tarefas principais
 1. ⏳ Revisar queries Firestore
 2. ⏳ Melhorar performance (cache, lazy loading, debounce)
-3. ⏳ Testes para bookingsService.ts
-4. ⏳ Testes para authController.ts
-5. ⏳ Testes para transactions.ts
+3. ⏳ Testes para authController.ts (baixa prioridade)
 
-### 📈 Progresso: ~69% concluído (11/16 tarefas principais)
+### 📈 Progresso: ~87% concluído (13/16 tarefas principais)
 
 ---
 
 ## 🎯 PRÓXIMAS TAREFAS SUGERIDAS (Ordem de Prioridade)
 
-### Alta Prioridade:
-1. **Testes para bookingsService.ts** - Importante para garantir funcionamento do agendamento
-2. **Testes para transactions.ts** - Crítico para prevenir race conditions
-
 ### Média Prioridade:
-3. **Revisar queries Firestore** - Otimização de performance
-4. **Melhorar performance** - Cache e lazy loading
+1. **Revisar queries Firestore** - Otimização de performance
+   - Identificar queries que podem ser otimizadas
+   - Adicionar índices se necessário
+   - Otimizar ordenação em memória
+
+2. **Melhorar performance** - Cache e lazy loading
+   - Cache de dados frequentes (licenses, slots)
+   - Lazy loading onde apropriado
+   - Debounce em validações do frontend
 
 ### Baixa Prioridade:
-5. **Testes para authController.ts** - Já tem validações robustas, menos crítico
-6. **Testes de performance** - Pode ser feito depois
+3. **Testes para authController.ts** - Já tem validações robustas, menos crítico
+   - Testar cadastro com license
+   - Testar validação de license
+   - Testar tratamento de erros
+
+4. **Testes de performance** - Pode ser feito depois
+   - Testar tempo de resposta
+   - Testar carga de requisições
+   - Testar concorrência
 
 ---
 
