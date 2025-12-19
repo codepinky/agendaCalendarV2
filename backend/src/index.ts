@@ -69,7 +69,28 @@ app.use('/api/slots', slotsRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/webhooks', webhookRoutes);
 
-// Health check
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check do servidor
+ *     tags: [Health]
+ *     description: Endpoint para verificar se o servidor está funcionando
+ *     responses:
+ *       200:
+ *         description: Servidor está funcionando
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: 'ok'
+ *                 message:
+ *                   type: string
+ *                   example: 'Server is running'
+ */
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });

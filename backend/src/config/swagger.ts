@@ -241,6 +241,10 @@ const swaggerDefinition = {
       name: 'Webhooks',
       description: 'Webhooks externos (Kiwify)',
     },
+    {
+      name: 'Health',
+      description: 'Health check e status do servidor',
+    },
   ],
 };
 
