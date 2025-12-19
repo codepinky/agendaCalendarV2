@@ -69,24 +69,51 @@ describe('transactions', () => {
         id: mockBookingId,
       };
 
-      // Mock transaction.get para slot
-      mockTransaction.get.mockImplementation((ref: any) => {
-        if (ref.path.includes('availableSlots')) {
-          return Promise.resolve(mockSlotDoc);
+      const mockSlotRef = {};
+      const mockBookingsRef = {
+        where: jest.fn().mockReturnThis(),
+        doc: jest.fn().mockReturnValue(mockBookingRef),
+      };
+
+      // Setup mocks para a estrutura do Firestore
+      (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
+        if (collectionName === 'users') {
+          return {
+            doc: jest.fn().mockReturnValue({
+              collection: jest.fn().mockImplementation((subCollection: string) => {
+                if (subCollection === 'availableSlots') {
+                  return {
+                    doc: jest.fn().mockReturnValue(mockSlotRef),
+                  };
+                }
+                if (subCollection === 'bookings') {
+                  return mockBookingsRef;
+                }
+                return {};
+              }),
+            }),
+          };
         }
-        if (ref.path.includes('bookings') && ref.queryConstraints) {
-          // Verifica se é query de confirmed ou pending
-          const isConfirmed = ref.queryConstraints.some((qc: any) => 
-            qc.fieldPath === 'status' && qc.value === 'confirmed'
-          );
-          return Promise.resolve(isConfirmed ? mockConfirmedBookings : mockPendingBookings);
-        }
-        return Promise.resolve({ size: 0 });
+        return {};
       });
 
-      // Mock db.collection para criar bookingRef
-      (db.collection as jest.Mock).mockReturnValue({
-        doc: jest.fn().mockReturnValue(mockBookingRef),
+      // Mock transaction.get
+      let callCount = 0;
+      mockTransaction.get.mockImplementation((refOrQuery: any) => {
+        callCount++;
+        // Primeira chamada: slotRef
+        if (callCount === 1) {
+          return Promise.resolve(mockSlotDoc);
+        }
+        // Segunda chamada: query confirmed bookings
+        if (callCount === 2) {
+          return Promise.resolve(mockConfirmedBookings);
+        }
+        // Terceira chamada: query pending bookings
+        if (callCount === 3) {
+          return Promise.resolve(mockPendingBookings);
+        }
+        return Promise.resolve({ size: 0 });
       });
 
       // Mock db.runTransaction
@@ -95,56 +122,6 @@ describe('transactions', () => {
           return await callback(mockTransaction as any);
         }
       );
-
-      // Mock slotRef
-      const mockSlotRef = {};
-      (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
-        if (collectionName === 'users') {
-          return {
-            doc: jest.fn().mockReturnValue({
-              collection: jest.fn().mockReturnValue({
-                doc: jest.fn().mockReturnValue(mockSlotRef),
-              }),
-            }),
-          };
-        }
-        return {
-          doc: jest.fn().mockReturnValue(mockBookingRef),
-        };
-      });
-
-      // Mock bookingsRef.where para queries
-      const mockBookingsRef = {
-        where: jest.fn().mockReturnThis(),
-        doc: jest.fn().mockReturnValue(mockBookingRef),
-      };
-
-      (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
-        if (collectionName === 'users') {
-          return {
-            doc: jest.fn().mockReturnValue({
-              collection: jest.fn().mockReturnValue({
-                doc: jest.fn().mockReturnValue(mockSlotRef),
-                where: jest.fn().mockReturnValue(mockBookingsRef),
-              }),
-            }),
-          };
-        }
-        return {
-          doc: jest.fn().mockReturnValue(mockBookingRef),
-        };
-      });
-
-      // Mock transaction.get para queries
-      mockTransaction.get.mockImplementation((query: any) => {
-        if (query && query.queryConstraints) {
-          const isConfirmed = query.queryConstraints.some((qc: any) => 
-            qc.fieldPath === 'status' && qc.value === 'confirmed'
-          );
-          return Promise.resolve(isConfirmed ? mockConfirmedBookings : mockPendingBookings);
-        }
-        return Promise.resolve(mockSlotDoc);
-      });
 
       const result = await processBookingTransaction(mockUserId, mockSlotId, mockBookingData);
 
@@ -160,6 +137,16 @@ describe('transactions', () => {
       const mockSlotDoc = {
         exists: false,
       };
+
+      const mockSlotRef = {};
+
+      (db.collection as jest.Mock).mockReturnValue({
+        doc: jest.fn().mockReturnValue({
+          collection: jest.fn().mockReturnValue({
+            doc: jest.fn().mockReturnValue(mockSlotRef),
+          }),
+        }),
+      });
 
       mockTransaction.get.mockResolvedValue(mockSlotDoc);
 
@@ -184,6 +171,16 @@ describe('transactions', () => {
         exists: true,
         data: () => unavailableSlot,
       };
+
+      const mockSlotRef = {};
+
+      (db.collection as jest.Mock).mockReturnValue({
+        doc: jest.fn().mockReturnValue({
+          collection: jest.fn().mockReturnValue({
+            doc: jest.fn().mockReturnValue(mockSlotRef),
+          }),
+        }),
+      });
 
       mockTransaction.get.mockResolvedValue(mockSlotDoc);
 
@@ -213,14 +210,49 @@ describe('transactions', () => {
         size: 0,
       };
 
-      mockTransaction.get.mockImplementation((query: any) => {
-        if (query && query.queryConstraints) {
-          const isConfirmed = query.queryConstraints.some((qc: any) => 
-            qc.fieldPath === 'status' && qc.value === 'confirmed'
-          );
-          return Promise.resolve(isConfirmed ? mockConfirmedBookings : mockPendingBookings);
+      const mockSlotRef = {};
+      const mockBookingsRef = {
+        where: jest.fn().mockReturnThis(),
+      };
+
+      (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
+        if (collectionName === 'users') {
+          return {
+            doc: jest.fn().mockReturnValue({
+              collection: jest.fn().mockImplementation((subCollection: string) => {
+                if (subCollection === 'availableSlots') {
+                  return {
+                    doc: jest.fn().mockReturnValue(mockSlotRef),
+                  };
+                }
+                if (subCollection === 'bookings') {
+                  return mockBookingsRef;
+                }
+                return {};
+              }),
+            }),
+          };
         }
-        return Promise.resolve(mockSlotDoc);
+        return {};
+      });
+
+      // Mock transaction.get com contador de chamadas
+      let callCount = 0;
+      mockTransaction.get.mockImplementation((refOrQuery: any) => {
+        callCount++;
+        // Primeira chamada: slotRef
+        if (callCount === 1) {
+          return Promise.resolve(mockSlotDoc);
+        }
+        // Segunda chamada: query confirmed bookings
+        if (callCount === 2) {
+          return Promise.resolve(mockConfirmedBookings);
+        }
+        // Terceira chamada: query pending bookings
+        if (callCount === 3) {
+          return Promise.resolve(mockPendingBookings);
+        }
+        return Promise.resolve({ size: 0 });
       });
 
       (db.runTransaction as jest.Mock).mockImplementation(
@@ -249,10 +281,7 @@ describe('transactions', () => {
         size: 1, // Já tem 1 pendente
       };
 
-      // Mock: slotRef
       const mockSlotRef = {};
-      
-      // Mock: bookingsRef com queries
       const mockBookingsRef = {
         where: jest.fn().mockReturnThis(),
       };
@@ -261,29 +290,40 @@ describe('transactions', () => {
         if (collectionName === 'users') {
           return {
             doc: jest.fn().mockReturnValue({
-              collection: jest.fn().mockReturnValue({
-                doc: jest.fn().mockReturnValue(mockSlotRef),
-                where: jest.fn().mockReturnValue(mockBookingsRef),
+              collection: jest.fn().mockImplementation((subCollection: string) => {
+                if (subCollection === 'availableSlots') {
+                  return {
+                    doc: jest.fn().mockReturnValue(mockSlotRef),
+                  };
+                }
+                if (subCollection === 'bookings') {
+                  return mockBookingsRef;
+                }
+                return {};
               }),
             }),
           };
         }
-        return {
-          doc: jest.fn().mockReturnValue({ id: mockBookingId }),
-        };
+        return {};
       });
 
-      // Mock transaction.get
+      // Mock transaction.get com contador de chamadas
+      let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
-        // Se for slotRef (não tem queryConstraints)
-        if (!refOrQuery || !refOrQuery.queryConstraints) {
+        callCount++;
+        // Primeira chamada: slotRef
+        if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Se for query de bookings
-        const isConfirmed = refOrQuery.queryConstraints?.some((qc: any) => 
-          qc.fieldPath === 'status' && qc.value === 'confirmed'
-        );
-        return Promise.resolve(isConfirmed ? mockConfirmedBookings : mockPendingBookings);
+        // Segunda chamada: query confirmed bookings
+        if (callCount === 2) {
+          return Promise.resolve(mockConfirmedBookings);
+        }
+        // Terceira chamada: query pending bookings
+        if (callCount === 3) {
+          return Promise.resolve(mockPendingBookings);
+        }
+        return Promise.resolve({ size: 0 });
       });
 
       (db.runTransaction as jest.Mock).mockImplementation(
@@ -332,28 +372,40 @@ describe('transactions', () => {
         if (collectionName === 'users') {
           return {
             doc: jest.fn().mockReturnValue({
-              collection: jest.fn().mockReturnValue({
-                doc: jest.fn().mockReturnValue(mockSlotRef),
-                where: jest.fn().mockReturnValue(mockBookingsRef),
+              collection: jest.fn().mockImplementation((subCollection: string) => {
+                if (subCollection === 'availableSlots') {
+                  return {
+                    doc: jest.fn().mockReturnValue(mockSlotRef),
+                  };
+                }
+                if (subCollection === 'bookings') {
+                  return mockBookingsRef;
+                }
+                return {};
               }),
             }),
           };
         }
-        return {
-          doc: jest.fn().mockReturnValue(mockBookingRef),
-        };
+        return {};
       });
 
+      // Mock transaction.get com contador de chamadas
+      let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
-        // Se for slotRef (não tem queryConstraints)
-        if (!refOrQuery || !refOrQuery.queryConstraints) {
+        callCount++;
+        // Primeira chamada: slotRef
+        if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Se for query de bookings
-        const isConfirmed = refOrQuery.queryConstraints?.some((qc: any) => 
-          qc.fieldPath === 'status' && qc.value === 'confirmed'
-        );
-        return Promise.resolve(isConfirmed ? mockConfirmedBookings : mockPendingBookings);
+        // Segunda chamada: query confirmed bookings
+        if (callCount === 2) {
+          return Promise.resolve(mockConfirmedBookings);
+        }
+        // Terceira chamada: query pending bookings
+        if (callCount === 3) {
+          return Promise.resolve(mockPendingBookings);
+        }
+        return Promise.resolve({ size: 0 });
       });
 
       (db.runTransaction as jest.Mock).mockImplementation(
@@ -365,8 +417,11 @@ describe('transactions', () => {
       const result = await processBookingTransaction(mockUserId, mockSlotId, mockBookingData);
 
       expect(result.success).toBe(true);
-      // Deve atualizar slot (pode ser 'reserved' ou '_lastBookingAt' dependendo da lógica)
-      expect(mockTransaction.update).toHaveBeenCalled();
+      // Deve atualizar slot para 'reserved' porque totalBookings (1 + 1) >= maxBookings (2)
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        mockSlotRef,
+        { status: 'reserved' }
+      );
     });
 
     it('deve atualizar slot com _lastBookingAt quando ainda há vagas', async () => {
@@ -403,28 +458,40 @@ describe('transactions', () => {
         if (collectionName === 'users') {
           return {
             doc: jest.fn().mockReturnValue({
-              collection: jest.fn().mockReturnValue({
-                doc: jest.fn().mockReturnValue(mockSlotRef),
-                where: jest.fn().mockReturnValue(mockBookingsRef),
+              collection: jest.fn().mockImplementation((subCollection: string) => {
+                if (subCollection === 'availableSlots') {
+                  return {
+                    doc: jest.fn().mockReturnValue(mockSlotRef),
+                  };
+                }
+                if (subCollection === 'bookings') {
+                  return mockBookingsRef;
+                }
+                return {};
               }),
             }),
           };
         }
-        return {
-          doc: jest.fn().mockReturnValue(mockBookingRef),
-        };
+        return {};
       });
 
+      // Mock transaction.get com contador de chamadas
+      let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
-        // Se for slotRef (não tem queryConstraints)
-        if (!refOrQuery || !refOrQuery.queryConstraints) {
+        callCount++;
+        // Primeira chamada: slotRef
+        if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Se for query de bookings
-        const isConfirmed = refOrQuery.queryConstraints?.some((qc: any) => 
-          qc.fieldPath === 'status' && qc.value === 'confirmed'
-        );
-        return Promise.resolve(isConfirmed ? mockConfirmedBookings : mockPendingBookings);
+        // Segunda chamada: query confirmed bookings
+        if (callCount === 2) {
+          return Promise.resolve(mockConfirmedBookings);
+        }
+        // Terceira chamada: query pending bookings
+        if (callCount === 3) {
+          return Promise.resolve(mockPendingBookings);
+        }
+        return Promise.resolve({ size: 0 });
       });
 
       (db.runTransaction as jest.Mock).mockImplementation(
@@ -446,4 +513,3 @@ describe('transactions', () => {
     });
   });
 });
-
