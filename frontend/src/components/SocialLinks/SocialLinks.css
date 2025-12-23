@@ -1,0 +1,93 @@
+.social-links-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm, 0.75rem);
+  flex-wrap: nowrap;
+  width: 100%;
+  margin: 0 auto;
+  margin-top: var(--spacing-xl, 2rem);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.social-links-list::-webkit-scrollbar {
+  display: none;
+}
+
+.social-link-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.95);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.social-link-icon-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: rgba(255, 255, 255, 1);
+}
+
+.social-link-icon-button:active {
+  transform: translateY(0);
+}
+
+
+/* Dark mode */
+[data-theme="dark"] .social-link-icon-button {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .social-link-icon-button:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Mobile */
+@media (max-width: 575px) {
+  .social-links-list {
+    gap: var(--spacing-sm, 0.75rem);
+    margin-top: var(--spacing-lg, 1.5rem);
+  }
+  
+  .social-link-icon-button {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+  .social-links-list {
+    gap: var(--spacing-md, 1rem);
+    margin-top: var(--spacing-2xl, 3rem);
+  }
+  
+  .social-link-icon-button {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+}
