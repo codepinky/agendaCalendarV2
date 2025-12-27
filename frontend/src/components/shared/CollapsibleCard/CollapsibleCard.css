@@ -1,0 +1,169 @@
+/* Mobile First */
+.collapsible-card {
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--color-card-background);
+  border-color: var(--color-card-border);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+  overflow: visible; /* Permitir que o conteúdo seja totalmente visível */
+  display: flex;
+  flex-direction: column;
+}
+
+.collapsible-card-header {
+  background-color: var(--color-background-secondary);
+  border-bottom-color: var(--color-card-border);
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: background-color var(--transition-base);
+}
+
+[data-theme="dark"] .collapsible-card-header {
+  background-color: var(--color-background-tertiary);
+}
+
+.collapsible-card-header:hover {
+  background-color: var(--color-surface-hover);
+}
+
+[data-theme="dark"] .collapsible-card-header:hover {
+  background-color: var(--color-background-secondary);
+}
+
+.collapsible-card-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+  gap: var(--spacing-sm);
+}
+
+.collapsible-card-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.collapsible-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.collapsible-card-toggle {
+  background: none;
+  border: none;
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-base), color var(--transition-base);
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--border-radius-md);
+}
+
+.collapsible-card-toggle:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-hover);
+}
+
+.collapsible-card-toggle.expanded {
+  transform: rotate(180deg);
+}
+
+.collapsible-card-body {
+  padding: var(--spacing-lg);
+  color: var(--color-text-primary);
+  transition: max-height var(--transition-base), opacity var(--transition-base), padding var(--transition-base);
+  overflow-y: auto; /* Permitir scroll vertical se necessário */
+  overflow-x: hidden;
+  max-height: none; /* Remover limite de altura fixo */
+  opacity: 1;
+}
+
+.collapsible-card-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden; /* Manter hidden quando colapsado */
+}
+
+.collapsible-card-body.expanded {
+  animation: slideDown var(--transition-slow) ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.collapsible-card-body p {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.collapsible-card-body p:last-child {
+  margin-bottom: 0;
+}
+
+.collapsible-card-body strong {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* Desktop - Cards sempre expandidos */
+@media (min-width: 768px) {
+  .collapsible-card {
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .collapsible-card-header {
+    cursor: default;
+    padding: var(--spacing-lg) var(--spacing-xl);
+  }
+  
+  .collapsible-card-header:hover {
+    background-color: var(--color-background-secondary);
+  }
+  
+  [data-theme="dark"] .collapsible-card-header:hover {
+    background-color: var(--color-background-tertiary);
+  }
+  
+  .collapsible-card-toggle {
+    display: none;
+  }
+  
+  .collapsible-card-body {
+    padding: var(--spacing-xl);
+    padding-bottom: calc(var(--spacing-xl) * 2); /* Espaço extra no desktop também */
+    animation: none;
+    max-height: none; /* Sem limite de altura no desktop */
+  }
+  
+  .collapsible-card-title {
+    font-size: var(--font-size-xl);
+  }
+}
+

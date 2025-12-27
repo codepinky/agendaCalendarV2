@@ -67,8 +67,11 @@ function Login() {
 
   return (
     <Container className="login-container">
+      <div className="login-brand">
+        <h1 className="login-brand-name">Linea Calendar</h1>
+      </div>
       <div className="login-card">
-        <h1 className="login-title">{labels.loginTitle}</h1>
+        <h2 className="login-title">{labels.loginTitle}</h2>
         
         {error && <Alert variant="danger">{error}</Alert>}
 

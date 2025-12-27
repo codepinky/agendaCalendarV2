@@ -180,3 +180,11 @@ echo "   export BACKEND_URL='https://seu-backend.com'"
 echo "   export AUTH_TOKEN='seu_token_jwt'"
 echo "   ./scripts/test-slot-validations.sh"
 
+
+
+
+
+
+
+
+

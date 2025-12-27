@@ -168,3 +168,11 @@ Após criar a VM, você precisa abrir as portas:
 
 
 
+
+
+
+
+
+
+
+

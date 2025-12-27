@@ -378,3 +378,11 @@ test('deve calcular total', () => {
 
 **Última atualização**: 19/12/2025
 
+
+
+
+
+
+
+
+

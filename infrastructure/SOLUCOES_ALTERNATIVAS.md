@@ -104,3 +104,11 @@ Após conseguir criar a VM (manualmente ou via Terraform):
 
 
 
+
+
+
+
+
+
+
+

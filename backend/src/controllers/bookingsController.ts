@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { getAvailableSlotsByPublicLink, createBooking, getUserBookings } from '../services/bookingsService';
+import { getAvailableSlotsByPublicLink, createBooking, getUserBookings, getPublicProfileByLink } from '../services/bookingsService';
 import { validateEmail, validatePhone, sanitizeString, sanitizeEmail } from '../utils/validation';
 import { logger } from '../utils/logger';
 
@@ -123,6 +123,35 @@ export const getMyBookings = async (req: AuthRequest, res: Response) => {
       ip: req.ip,
     });
     
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getPublicProfile = async (req: any, res: Response) => {
+  try {
+    const { publicLink } = req.params;
+
+    if (!publicLink) {
+      return res.status(400).json({ 
+        error: 'Link público é obrigatório',
+        details: 'O link público é necessário para buscar o perfil'
+      });
+    }
+
+    const profile = await getPublicProfileByLink(publicLink);
+    return res.json(profile);
+  } catch (error: any) {
+    logger.error('Error getting public profile', {
+      error: error.message,
+      stack: error.stack,
+      publicLink: req.params.publicLink,
+      ip: req.ip,
+    });
+    
+    if (error.message === 'Public link not found') {
+      return res.status(404).json({ error: error.message });
+    }
+
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

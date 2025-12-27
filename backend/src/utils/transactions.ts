@@ -24,16 +24,16 @@ export const processBookingTransaction = async (
     // Get current bookings count for this slot
     // IMPORTANT: Count both 'confirmed' and 'pending' bookings to prevent race conditions
     // If we only count 'confirmed', two simultaneous transactions could both pass
+    // OPTIMIZATION: Use single query with 'in' operator instead of two separate queries
     const bookingsRef = db.collection('users').doc(userId).collection('bookings');
-    const confirmedBookings = await transaction.get(
-      bookingsRef.where('slotId', '==', slotId).where('status', '==', 'confirmed')
-    );
-    const pendingBookings = await transaction.get(
-      bookingsRef.where('slotId', '==', slotId).where('status', '==', 'pending')
+    const activeBookings = await transaction.get(
+      bookingsRef
+        .where('slotId', '==', slotId)
+        .where('status', 'in', ['confirmed', 'pending'])
     );
 
     // Count all active bookings (confirmed + pending) to prevent double booking
-    const totalBookings = confirmedBookings.size + pendingBookings.size;
+    const totalBookings = activeBookings.size;
 
     if (totalBookings >= slot.maxBookings) {
       throw new Error('Slot is fully booked');

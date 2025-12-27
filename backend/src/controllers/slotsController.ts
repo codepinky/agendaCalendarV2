@@ -4,6 +4,8 @@ import { createSlot, getSlots, deleteSlot } from '../services/slotsService';
 import { AvailableSlot } from '../types';
 import { sanitizeString } from '../utils/validation';
 import { logger } from '../utils/logger';
+import { db } from '../services/firebase';
+import { clearCache } from '../services/cacheService';
 
 export const createSlotHandler = async (req: AuthRequest, res: Response) => {
   try {
@@ -16,21 +18,23 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
     // maxBookings sempre será 1 (removido do frontend, mantido para compatibilidade)
 
     // Validação adicional: se data é hoje, verificar que hora não é no passado
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const slotDate = new Date(date);
-    slotDate.setHours(0, 0, 0, 0);
+    // Comparar apenas as datas (sem hora) para evitar problemas de timezone
+    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const slotDateStr = date; // Já vem no formato YYYY-MM-DD
     
-    if (slotDate.getTime() === today.getTime()) {
+    // Só validar hora se a data for exatamente hoje
+    if (slotDateStr === todayStr) {
       const now = new Date();
       const [startHour, startMin] = startTime.split(':').map(Number);
       const slotStartTime = new Date();
+      slotStartTime.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
       slotStartTime.setHours(startHour, startMin, 0, 0);
       
       if (slotStartTime < now) {
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         return res.status(400).json({ 
           error: 'Não é possível criar horário com hora no passado',
-          details: `A hora de início (${startTime}) já passou. Selecione uma hora futura.`
+          details: `A hora de início (${startTime}) já passou. O horário precisa começar pelo menos às ${currentTime}.`
         });
       }
     }
@@ -53,6 +57,21 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
     };
 
     const slot = await createSlot(req.user.uid, slotData);
+
+    // CACHE: Limpar cache de slots quando um novo slot é criado
+    // Buscar publicLink do usuário para limpar cache específico
+    try {
+      const userDoc = await db.collection('users').doc(req.user.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData?.publicLink) {
+          clearCache.slots(userData.publicLink);
+        }
+      }
+    } catch (cacheError) {
+      // Não falhar a criação do slot se limpeza de cache falhar
+      logger.warn('Failed to clear slots cache', { error: cacheError, userId: req.user.uid });
+    }
 
     return res.status(201).json(slot);
   } catch (error: any) {
@@ -114,6 +133,20 @@ export const deleteSlotHandler = async (req: AuthRequest, res: Response) => {
 
     const { id } = req.params;
     await deleteSlot(req.user.uid, id);
+    
+    // CACHE: Limpar cache de slots quando um slot é deletado
+    try {
+      const userDoc = await db.collection('users').doc(req.user.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData?.publicLink) {
+          clearCache.slots(userData.publicLink);
+        }
+      }
+    } catch (cacheError) {
+      // Não falhar a deleção do slot se limpeza de cache falhar
+      logger.warn('Failed to clear slots cache', { error: cacheError, userId: req.user.uid });
+    }
     
     return res.json({ success: true });
   } catch (error: any) {

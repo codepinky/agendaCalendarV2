@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Form, Alert } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 import { labels } from '../../locales/pt-BR';
@@ -7,6 +7,7 @@ import Input from '../../components/shared/Input/Input';
 import api from '../../services/api';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '../../services/firebase';
+import { useDebounce } from '../../hooks/useDebounce';
 import './Register.css';
 
 function Register() {
@@ -21,8 +22,15 @@ function Register() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validatingLicense, setValidatingLicense] = useState(false);
 
-  // Validação em tempo real
+  // DEBOUNCE: Valores debounced para validações
+  // License code: 2000ms (2s) - dá tempo suficiente para digitar o código completo
+  // Validação também acontece onBlur (quando sair do campo)
+  const debouncedLicenseCode = useDebounce(formData.licenseCode, 2000);
+  const debouncedEmail = useDebounce(formData.email, 300);
+
+  // Validação em tempo real (sem debounce para feedback imediato de formato)
   const validateField = (field: string, value: string) => {
     const newErrors = { ...errors };
     
@@ -84,23 +92,93 @@ function Register() {
     setErrors(newErrors);
   };
 
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
     setFormData({ ...formData, [field]: value });
     validateField(field, value);
   };
 
-  const validateLicense = async () => {
-    try {
-      const response = await api.post('/licenses/validate', {
-        code: formData.licenseCode,
-      });
-      return response.data.valid;
-    } catch (err: any) {
-      setError(err.response?.data?.error || labels.errorGeneric);
+  const validateLicense = async (code: string) => {
+    if (!code || code.length < 8) {
       return false;
     }
+
+    setValidatingLicense(true);
+    try {
+      const response = await api.post('/licenses/validate', {
+        code: code,
+      });
+      
+      if (!response.data.valid) {
+        setErrors((prev) => ({
+          ...prev,
+          licenseCode: response.data.error || labels.errorInvalidLicense,
+        }));
+        return false;
+      }
+      
+      // Limpar erro se license for válida
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.licenseCode;
+        return newErrors;
+      });
+      
+      return true;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || labels.errorInvalidLicense;
+      setErrors((prev) => ({
+        ...prev,
+        licenseCode: errorMessage,
+      }));
+      return false;
+    } finally {
+      setValidatingLicense(false);
+    }
   };
+
+  // DEBOUNCE: Validar license code após debounce (2000ms - 2 segundos)
+  // Só valida via debounce se o código tiver 8+ caracteres E não estiver validando no momento
+  useEffect(() => {
+    // Só validar se não estiver validando no momento (evita múltiplas validações)
+    if (debouncedLicenseCode && debouncedLicenseCode.length >= 8 && !validatingLicense) {
+      validateLicense(debouncedLicenseCode);
+    } else if (debouncedLicenseCode && debouncedLicenseCode.length < 8) {
+      // Limpar erro se código for muito curto
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.licenseCode;
+        return newErrors;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedLicenseCode]);
+
+  // Handler para validar quando sair do campo (onBlur)
+  const handleLicenseBlur = async () => {
+    if (formData.licenseCode && formData.licenseCode.length >= 8 && !validatingLicense) {
+      await validateLicense(formData.licenseCode);
+    }
+  };
+
+  // DEBOUNCE: Validar email após debounce (300ms)
+  useEffect(() => {
+    if (debouncedEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(debouncedEmail)) {
+        setErrors((prev) => ({
+          ...prev,
+          email: labels.errorInvalidEmail,
+        }));
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.email;
+          return newErrors;
+        });
+      }
+    }
+  }, [debouncedEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,8 +210,8 @@ function Register() {
       return;
     }
 
-    // Validate license first
-    const isValid = await validateLicense();
+    // Validate license first (usar função sem debounce para submit)
+    const isValid = await validateLicense(formData.licenseCode);
     if (!isValid) {
       return;
     }
@@ -175,8 +253,10 @@ function Register() {
             placeholder={labels.licenseCodePlaceholder}
             value={formData.licenseCode}
             onChange={handleChange('licenseCode')}
+            onBlur={handleLicenseBlur}
             error={errors.licenseCode}
             required
+            disabled={validatingLicense}
           />
 
           <Input

@@ -2,6 +2,7 @@ import { getAvailableSlotsByPublicLink, createBooking, getUserBookings } from '.
 import { db } from '../../services/firebase';
 import { processBookingTransaction } from '../../utils/transactions';
 import { createCalendarEvent } from '../../services/googleCalendarService';
+import { slotsCache } from '../../services/cacheService';
 import { AvailableSlot, Booking } from '../../types';
 
 // Mock dependencies
@@ -42,6 +43,9 @@ describe('bookingsService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Limpar cache entre testes
+    slotsCache.flushAll();
 
     // Setup default mocks
     (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
@@ -73,25 +77,6 @@ describe('bookingsService', () => {
 
   describe('getAvailableSlotsByPublicLink', () => {
     it('deve retornar slots disponíveis quando link público existe', async () => {
-      // Mock: usuário encontrado
-      const mockUserDoc = {
-        id: mockUserId,
-      };
-
-      (db.collection as jest.Mock).mockReturnValue({
-        where: jest.fn().mockReturnValue({
-          limit: jest.fn().mockReturnValue({
-            get: jest.fn().mockResolvedValue({
-              empty: false,
-              docs: [mockUserDoc],
-            }),
-          }),
-        }),
-        doc: jest.fn().mockReturnValue({
-          collection: jest.fn().mockReturnValue(mockSlotsCollection),
-        }),
-      });
-
       // Mock: slots disponíveis
       const mockSlot1: AvailableSlot = {
         id: 'slot1',
@@ -113,14 +98,7 @@ describe('bookingsService', () => {
         createdAt: '2025-12-18T11:00:00Z',
       };
 
-      mockSlotsCollection.get.mockResolvedValue({
-        docs: [
-          { id: 'slot1', data: () => mockSlot1 },
-          { id: 'slot2', data: () => mockSlot2 },
-        ],
-      });
-
-      // Mock: nenhum booking confirmado (slots estão disponíveis)
+      // Mock: usuário encontrado e slots com filtros Firestore
       (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
         if (collectionName === 'users') {
           return {
@@ -135,7 +113,9 @@ describe('bookingsService', () => {
             doc: jest.fn().mockReturnValue({
               collection: jest.fn().mockImplementation((subCollection: string) => {
                 if (subCollection === 'availableSlots') {
-                  return {
+                  // Mock para slotsRef.where().where().get()
+                  const mockQuery = {
+                    where: jest.fn().mockReturnThis(),
                     get: jest.fn().mockResolvedValue({
                       docs: [
                         { id: 'slot1', data: () => mockSlot1 },
@@ -143,14 +123,15 @@ describe('bookingsService', () => {
                       ],
                     }),
                   };
+                  return mockQuery;
                 }
                 if (subCollection === 'bookings') {
+                  // Mock para bookingsRef.where().get() - busca TODOS os bookings confirmados
                   return {
                     where: jest.fn().mockReturnValue({
-                      where: jest.fn().mockReturnValue({
-                        get: jest.fn().mockResolvedValue({
-                          size: 0, // Nenhum booking confirmado
-                        }),
+                      get: jest.fn().mockResolvedValue({
+                        docs: [], // Nenhum booking confirmado
+                        size: 0,
                       }),
                     }),
                   };
@@ -168,6 +149,7 @@ describe('bookingsService', () => {
       expect(result).toHaveProperty('userId', mockUserId);
       expect(result).toHaveProperty('slots');
       expect(Array.isArray(result.slots)).toBe(true);
+      expect(result.slots.length).toBe(2);
     });
 
     it('deve lançar erro quando link público não existe', async () => {
@@ -213,19 +195,26 @@ describe('bookingsService', () => {
             doc: jest.fn().mockReturnValue({
               collection: jest.fn().mockImplementation((subCollection: string) => {
                 if (subCollection === 'availableSlots') {
-                  return {
+                  // Mock para slotsRef.where().where().get()
+                  const mockQuery = {
+                    where: jest.fn().mockReturnThis(),
                     get: jest.fn().mockResolvedValue({
                       docs: [{ id: 'slot1', data: () => mockSlot }],
                     }),
                   };
+                  return mockQuery;
                 }
                 if (subCollection === 'bookings') {
+                  // Mock: booking confirmado para slot1 (slot está totalmente reservado)
+                  const mockBooking = {
+                    slotId: 'slot1',
+                    status: 'confirmed',
+                  };
                   return {
                     where: jest.fn().mockReturnValue({
-                      where: jest.fn().mockReturnValue({
-                        get: jest.fn().mockResolvedValue({
-                          size: 1, // Slot já tem 1 booking (maxBookings = 1)
-                        }),
+                      get: jest.fn().mockResolvedValue({
+                        docs: [{ id: 'booking1', data: () => mockBooking }],
+                        size: 1, // Slot já tem 1 booking (maxBookings = 1)
                       }),
                     }),
                   };
@@ -289,7 +278,9 @@ describe('bookingsService', () => {
             doc: jest.fn().mockReturnValue({
               collection: jest.fn().mockImplementation((subCollection: string) => {
                 if (subCollection === 'availableSlots') {
-                  return {
+                  // Mock para slotsRef.where().where().get()
+                  const mockQuery = {
+                    where: jest.fn().mockReturnThis(),
                     get: jest.fn().mockResolvedValue({
                       docs: [
                         { id: 'slot1', data: () => mockSlot1 },
@@ -298,14 +289,14 @@ describe('bookingsService', () => {
                       ],
                     }),
                   };
+                  return mockQuery;
                 }
                 if (subCollection === 'bookings') {
                   return {
                     where: jest.fn().mockReturnValue({
-                      where: jest.fn().mockReturnValue({
-                        get: jest.fn().mockResolvedValue({
-                          size: 0,
-                        }),
+                      get: jest.fn().mockResolvedValue({
+                        docs: [],
+                        size: 0,
                       }),
                     }),
                   };
@@ -641,4 +632,5 @@ describe('bookingsService', () => {
     });
   });
 });
+
 

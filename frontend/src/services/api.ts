@@ -16,6 +16,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Se for FormData, remover Content-Type para que o axios defina automaticamente com boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => {
@@ -35,7 +41,45 @@ api.interceptors.response.use(
   }
 );
 
+// API methods
+export const getPublicProfile = (publicLink: string) => {
+  return api.get(`/bookings/public-profile/${publicLink}`);
+};
+
+export const updatePublicCustomization = (data: { 
+  publicTitle?: string; 
+  socialLinks?: any;
+  publicProfile?: any;
+}) => {
+  return api.put('/users/public-customization', data);
+};
+
+export const uploadProfileImage = (file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  // Não definir Content-Type manualmente - o axios detecta FormData e adiciona o boundary automaticamente
+  return api.post('/users/upload/profile-image', formData);
+};
+
+export const uploadBannerImage = (file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  // Não definir Content-Type manualmente - o axios detecta FormData e adiciona o boundary automaticamente
+  return api.post('/users/upload/banner-image', formData);
+};
+
+export const uploadBackgroundImage = (file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  // Não definir Content-Type manualmente - o axios detecta FormData e adiciona o boundary automaticamente
+  return api.post('/users/upload/background-image', formData);
+};
+
 export default api;
+
+
+
+
 
 
 

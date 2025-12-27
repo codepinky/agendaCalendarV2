@@ -193,3 +193,11 @@ const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>)
 - Código mantém compatibilidade com versões anteriores
 - Validação em tempo real não bloqueia submissão (validação final ainda é feita)
 
+
+
+
+
+
+
+
+

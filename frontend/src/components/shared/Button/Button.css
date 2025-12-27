@@ -1,16 +1,139 @@
 .shared-button {
+  border-radius: var(--border-radius-lg);
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all var(--transition-base);
+  border-width: var(--border-width);
+  box-shadow: var(--shadow-sm);
+  letter-spacing: var(--letter-spacing-wide);
   width: 100%;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
 }
 
-/* Mobile First */
 @media (min-width: 768px) {
   .shared-button {
     width: auto;
     min-width: 120px;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-base);
   }
 }
 
+.shared-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
 
+.shared-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
 
+.shared-button:focus {
+  box-shadow: var(--shadow-md), 0 0 0 3px rgba(220, 38, 38, 0.1);
+  outline: none;
+}
 
+.shared-button:focus-visible {
+  box-shadow: var(--shadow-md), 0 0 0 3px rgba(220, 38, 38, 0.2);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 
+[data-theme="dark"] .shared-button:focus {
+  box-shadow: var(--shadow-md), 0 0 0 3px rgba(248, 113, 113, 0.2);
+}
+
+[data-theme="dark"] .shared-button:focus-visible {
+  box-shadow: var(--shadow-md), 0 0 0 3px rgba(248, 113, 113, 0.3);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Primary Button - Vermelho com gradiente */
+.shared-button.btn-primary {
+  background: var(--gradient-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.shared-button.btn-primary:hover {
+  background: var(--gradient-primary-light);
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-red);
+}
+
+.shared-button.btn-primary:active {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.shared-button.btn-primary:disabled {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary Button */
+.shared-button.btn-secondary {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.shared-button.btn-secondary:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Success Button */
+.shared-button.btn-success {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-text-inverse);
+}
+
+.shared-button.btn-success:hover {
+  background-color: var(--color-success-dark);
+  border-color: var(--color-success-dark);
+}
+
+/* Danger Button */
+.shared-button.btn-danger {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+.shared-button.btn-danger:hover {
+  background-color: var(--color-danger-dark);
+  border-color: var(--color-danger-dark);
+  box-shadow: var(--shadow-red);
+}
+
+/* Warning Button */
+.shared-button.btn-warning {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-text-inverse);
+}
+
+.shared-button.btn-warning:hover {
+  background-color: var(--color-warning-dark);
+  border-color: var(--color-warning-dark);
+}
+
+/* Size variants */
+.shared-button.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.shared-button.btn-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-lg);
+}

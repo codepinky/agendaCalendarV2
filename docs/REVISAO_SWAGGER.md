@@ -102,3 +102,11 @@ Todos os endpoints principais estão documentados, com exemplos e schemas. As me
 
 **Status geral: 95% completo** (os 5% restantes são melhorias opcionais)
 
+
+
+
+
+
+
+
+

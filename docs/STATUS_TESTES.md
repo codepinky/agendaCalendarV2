@@ -4,7 +4,7 @@ Este documento mostra o status atual dos testes unitários do projeto.
 
 ## ✅ O QUE JÁ TEMOS
 
-### Testes Implementados (36 testes passando)
+### Testes Implementados (53 testes passando)
 
 #### 1. **slotsService.test.ts** (10 testes) ✅
 - ✅ Criação de slots sem conflitos
@@ -32,21 +32,27 @@ Este documento mostra o status atual dos testes unitários do projeto.
 - ✅ Validação de criação de booking (telefone, email, etc.)
 - ✅ Validação de código de licença
 
+#### 5. **authController.test.ts** (17 testes) ✅
+- ✅ Registro com license válida
+- ✅ Erros de license (não existe, inativa, já usada)
+- ✅ Erro de email já registrado
+- ✅ Rollback de license em caso de erro
+- ✅ Validação de campos obrigatórios no login
+- ✅ Obter usuário atual (com e sem cache)
+- ✅ Erros de autenticação e autorização
+
 ---
 
 ## ❌ O QUE AINDA FALTA
 
-### Controllers (Não testados)
+### Controllers (Parcialmente testados)
 
-#### 1. **authController.ts** ⚠️
-- `register` - Cadastro com license
-- `login` - Login (retorna 501, não usado)
-- `getCurrentUser` - Obter usuário atual
+#### 1. **authController.ts** ✅
+- ✅ `register` - Cadastro com license (7 testes)
+- ✅ `login` - Login (5 testes)
+- ✅ `getCurrentUser` - Obter usuário atual (5 testes)
 
-**Prioridade:** MÉDIA
-- Já tem validações robustas (express-validator)
-- Lógica complexa está nos services
-- Controllers são principalmente "glue code"
+**Status:** COMPLETO (17 testes)
 
 #### 2. **bookingsController.ts** ⚠️
 - `getAvailableSlots` - Buscar slots disponíveis
@@ -152,9 +158,9 @@ Se quiser aumentar cobertura, pode adicionar:
 ## 📊 MÉTRICAS ATUAIS
 
 ```
-Test Suites: 4 passed, 4 total
-Tests:       36 passed, 36 total
-Cobertura:   ~60-70% (estimado)
+Test Suites: 5 passed, 5 total
+Tests:       53 passed, 53 total
+Cobertura:   ~70-80% (estimado)
 ```
 
 ### Cobertura por Camada:
@@ -164,7 +170,7 @@ Cobertura:   ~60-70% (estimado)
 | Services | ~90% | ✅ Excelente |
 | Utils | ~80% | ✅ Bom |
 | Middleware | ~70% | ✅ Bom |
-| Controllers | ~0% | ⚠️ Não testado |
+| Controllers | ~30% | ⚠️ Parcialmente testado (authController) |
 | Integrações | ~0% | ⚠️ Não testado |
 
 ---
@@ -206,5 +212,6 @@ O que falta são testes de "camada de API" (controllers), que são menos crític
 
 ---
 
-**Última atualização**: 19/12/2025
+**Última atualização**: 20/12/2025
+
 

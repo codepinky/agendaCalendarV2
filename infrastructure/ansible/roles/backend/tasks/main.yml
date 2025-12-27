@@ -42,13 +42,39 @@
   become: no
   tags: [backend, deploy]
 
-- name: Create backend .env file
+- name: Check if .env file exists and has real values
+  stat:
+    path: "{{ backend_dir }}/.env"
+  register: env_file_stat
+  tags: [backend]
+
+- name: Check if .env has placeholder values
+  shell: |
+    if [ -f "{{ backend_dir }}/.env" ]; then
+      grep -q "SUA_CHAVE_AQUI\|SEU_FIREBASE_PROJECT_ID\|SEU_FIREBASE_CLIENT_EMAIL" "{{ backend_dir }}/.env" && echo "has_placeholders" || echo "no_placeholders"
+    else
+      echo "file_not_exists"
+    fi
+  register: env_file_check
+  changed_when: false
+  tags: [backend]
+
+- name: Backup existing .env file
+  copy:
+    src: "{{ backend_dir }}/.env"
+    dest: "{{ backend_dir }}/.env.backup"
+    remote_src: yes
+  when: env_file_stat.stat.exists and env_file_check.stdout == "no_placeholders"
+  tags: [backend]
+
+- name: Create backend .env file (only if missing or has placeholders)
   template:
     src: backend.env.j2
     dest: "{{ backend_dir }}/.env"
     owner: "{{ app_user }}"
     group: "{{ app_user }}"
     mode: '0600'
+  when: not env_file_stat.stat.exists or env_file_check.stdout == "has_placeholders" or env_file_check.stdout == "file_not_exists"
   tags: [backend]
 
 - name: Install backend dependencies
@@ -97,6 +123,38 @@
   delay: 3
   ignore_errors: yes
   tags: [backend, deploy]
+
+- name: Install nginx (if not installed)
+  yum:
+    name: nginx
+    state: present
+  when: ansible_facts['distribution'] != "Amazon"
+  ignore_errors: yes
+  tags: [backend, nginx]
+
+- name: Install nginx (Amazon Linux)
+  dnf:
+    name: nginx
+    state: present
+  when: ansible_facts['distribution'] == "Amazon"
+  ignore_errors: yes
+  tags: [backend, nginx]
+
+- name: Create nginx configuration
+  template:
+    src: "{{ playbook_dir }}/templates/nginx-config.j2"
+    dest: /etc/nginx/conf.d/agenda-calendar.conf
+    mode: '0644'
+  notify:
+    - reload nginx
+  tags: [backend, nginx]
+
+- name: Ensure nginx is enabled and started
+  systemd:
+    name: nginx
+    enabled: yes
+    state: started
+  tags: [backend, nginx]
 
 - name: Display backend information
   debug:

@@ -154,3 +154,11 @@ npm test -- --verbose
 
 **Última atualização**: 19/12/2025
 
+
+
+
+
+
+
+
+

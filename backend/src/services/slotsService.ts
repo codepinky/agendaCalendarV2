@@ -73,9 +73,24 @@ export const createSlot = async (userId: string, slotData: Omit<AvailableSlot, '
   };
 };
 
-export const getSlots = async (userId: string) => {
+export const getSlots = async (userId: string, options?: { limit?: number; offset?: number; status?: string[] }) => {
   const slotsRef = db.collection('users').doc(userId).collection('availableSlots');
-  const snapshot = await slotsRef.get();
+  
+  // OPTIMIZATION: Add Firestore filters if provided
+  let query: FirebaseFirestore.Query = slotsRef;
+  
+  if (options?.status && options.status.length > 0) {
+    // Firestore 'in' operator supports up to 10 values
+    if (options.status.length <= 10) {
+      query = query.where('status', 'in', options.status);
+    }
+  }
+  
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+  
+  const snapshot = await query.get();
   
   const slots = snapshot.docs.map(doc => ({
     id: doc.id,
@@ -83,12 +98,19 @@ export const getSlots = async (userId: string) => {
   } as AvailableSlot));
   
   // Sort in memory: first by date, then by startTime
-  return slots.sort((a, b) => {
+  const sorted = slots.sort((a, b) => {
     if (a.date !== b.date) {
       return a.date.localeCompare(b.date);
     }
     return a.startTime.localeCompare(b.startTime);
   });
+  
+  // Apply offset if provided (after sorting)
+  if (options?.offset) {
+    return sorted.slice(options.offset);
+  }
+  
+  return sorted;
 };
 
 export const deleteSlot = async (userId: string, slotId: string) => {

@@ -1,0 +1,80 @@
+.public-customization-form {
+  padding: 1rem 0;
+  padding-bottom: 4rem; /* Espaço extra para garantir que o botão seja visível */
+  min-height: fit-content;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Garantir que o botão de submit seja sempre visível */
+.public-customization-form button[type="submit"] {
+  margin-top: 2.5rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0; /* Não permitir que o botão encolha */
+}
+
+/* Em mobile, garantir espaço extra no final */
+@media (max-width: 767px) {
+  .public-customization-form {
+    padding-bottom: 5rem; /* Ainda mais espaço em mobile */
+  }
+  
+  .public-customization-form button[type="submit"] {
+    margin-top: 2rem;
+    margin-bottom: 3rem; /* Mais espaço em mobile */
+  }
+}
+
+.images-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color, #dee2e6);
+}
+
+.images-section h5 {
+  margin-bottom: 0.5rem;
+  color: var(--color-text, #212529);
+}
+
+.images-section .text-muted {
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.social-links-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color, #dee2e6);
+}
+
+.social-links-section h5 {
+  margin-bottom: 0.5rem;
+  color: var(--color-text, #212529);
+}
+
+.social-links-section .text-muted {
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.social-usernames-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-color, #dee2e6);
+}
+
+.social-usernames-section h6 {
+  margin-bottom: 0.5rem;
+  color: var(--color-text, #212529);
+  font-size: 0.9rem;
+}
+
+.social-usernames-section .text-muted {
+  margin-bottom: 1rem;
+  display: block;
+  font-size: 0.85rem;
+}
+

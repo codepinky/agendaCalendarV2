@@ -8,6 +8,16 @@
     name: agenda-calendar-backend
     state: restarted
 
+- name: reload nginx
+  systemd:
+    name: nginx
+    state: reloaded
+
+
+
+
+
+
 
 
 

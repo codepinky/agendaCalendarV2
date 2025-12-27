@@ -61,6 +61,7 @@ import googleCalendarRoutes from './routes/googleCalendar';
 import slotsRoutes from './routes/slots';
 import bookingsRoutes from './routes/bookings';
 import webhookRoutes from './routes/webhooks';
+import usersRoutes from './routes/users';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/licenses', licenseRoutes);
@@ -68,6 +69,7 @@ app.use('/api/google-calendar', googleCalendarRoutes);
 app.use('/api/slots', slotsRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/users', usersRoutes);
 
 /**
  * @swagger

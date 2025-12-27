@@ -21,12 +21,15 @@ export const registerLimiter = rateLimit({
  */
 export const licenseValidationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 20, // 20 tentativas por IP por hora
+  max: 50, // 50 tentativas por IP por hora (aumentado para permitir testes)
   message: {
-    error: 'Too many license validation attempts, please try again later.',
+    error: 'Muitas tentativas de validação. Por favor, aguarde 1 hora antes de tentar novamente.',
+    details: 'Você excedeu o limite de 50 tentativas por hora. Isso ajuda a proteger o sistema contra tentativas de força bruta.',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Não contar requisições bem-sucedidas (validações de códigos válidos)
+  skipSuccessfulRequests: true,
 });
 
 /**
@@ -62,6 +65,8 @@ export const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+
 
 
 

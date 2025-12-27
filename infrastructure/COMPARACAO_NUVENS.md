@@ -203,3 +203,11 @@ Posso criar um script que tenta criar a VM automaticamente a cada X horas até c
 
 
 
+
+
+
+
+
+
+
+

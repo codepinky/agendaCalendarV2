@@ -147,3 +147,11 @@ KIWIFY_WEBHOOK_SECRET=seu_secret_da_kiwify
 - Sanitização automática previne XSS
 - Mensagens de erro mantêm formato consistente
 
+
+
+
+
+
+
+
+

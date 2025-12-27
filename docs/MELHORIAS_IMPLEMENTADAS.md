@@ -220,3 +220,11 @@ export AUTH_TOKEN="seu_token_jwt"
 - Aguardando testes manuais do usuário
 - Implementar melhorias adicionais conforme necessário
 
+
+
+
+
+
+
+
+

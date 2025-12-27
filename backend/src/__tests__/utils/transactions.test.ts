@@ -98,6 +98,7 @@ describe('transactions', () => {
       });
 
       // Mock transaction.get
+      // Agora temos apenas 2 chamadas: slotRef + bookings query (combinada)
       let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
         callCount++;
@@ -105,13 +106,12 @@ describe('transactions', () => {
         if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Segunda chamada: query confirmed bookings
+        // Segunda chamada: query combinada de bookings (confirmed + pending)
         if (callCount === 2) {
-          return Promise.resolve(mockConfirmedBookings);
-        }
-        // Terceira chamada: query pending bookings
-        if (callCount === 3) {
-          return Promise.resolve(mockPendingBookings);
+          // Retorna a soma de confirmed + pending
+          return Promise.resolve({
+            size: mockConfirmedBookings.size + mockPendingBookings.size,
+          });
         }
         return Promise.resolve({ size: 0 });
       });
@@ -213,7 +213,14 @@ describe('transactions', () => {
       const mockSlotRef = {};
       const mockBookingsRef = {
         where: jest.fn().mockReturnThis(),
+        doc: jest.fn().mockReturnValue({ id: 'booking123' }),
       };
+      
+      // Mock para query encadeada: where().where().get()
+      const mockBookingsQuery = {
+        where: jest.fn().mockReturnThis(),
+      };
+      mockBookingsRef.where.mockReturnValue(mockBookingsQuery);
 
       (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
         if (collectionName === 'users') {
@@ -237,6 +244,7 @@ describe('transactions', () => {
       });
 
       // Mock transaction.get com contador de chamadas
+      // Agora temos apenas 2 chamadas: slotRef + bookings query (combinada)
       let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
         callCount++;
@@ -244,13 +252,12 @@ describe('transactions', () => {
         if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Segunda chamada: query confirmed bookings
+        // Segunda chamada: query combinada de bookings (confirmed + pending)
         if (callCount === 2) {
-          return Promise.resolve(mockConfirmedBookings);
-        }
-        // Terceira chamada: query pending bookings
-        if (callCount === 3) {
-          return Promise.resolve(mockPendingBookings);
+          // Retorna a soma de confirmed + pending
+          return Promise.resolve({
+            size: mockConfirmedBookings.size + mockPendingBookings.size,
+          });
         }
         return Promise.resolve({ size: 0 });
       });
@@ -284,7 +291,14 @@ describe('transactions', () => {
       const mockSlotRef = {};
       const mockBookingsRef = {
         where: jest.fn().mockReturnThis(),
+        doc: jest.fn().mockReturnValue({ id: 'booking123' }),
       };
+      
+      // Mock para query encadeada: where().where().get()
+      const mockBookingsQuery = {
+        where: jest.fn().mockReturnThis(),
+      };
+      mockBookingsRef.where.mockReturnValue(mockBookingsQuery);
 
       (db.collection as jest.Mock).mockImplementation((collectionName: string) => {
         if (collectionName === 'users') {
@@ -308,6 +322,7 @@ describe('transactions', () => {
       });
 
       // Mock transaction.get com contador de chamadas
+      // Agora temos apenas 2 chamadas: slotRef + bookings query (combinada)
       let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
         callCount++;
@@ -315,13 +330,12 @@ describe('transactions', () => {
         if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Segunda chamada: query confirmed bookings
+        // Segunda chamada: query combinada de bookings (confirmed + pending)
         if (callCount === 2) {
-          return Promise.resolve(mockConfirmedBookings);
-        }
-        // Terceira chamada: query pending bookings
-        if (callCount === 3) {
-          return Promise.resolve(mockPendingBookings);
+          // Retorna a soma de confirmed + pending
+          return Promise.resolve({
+            size: mockConfirmedBookings.size + mockPendingBookings.size,
+          });
         }
         return Promise.resolve({ size: 0 });
       });
@@ -390,6 +404,7 @@ describe('transactions', () => {
       });
 
       // Mock transaction.get com contador de chamadas
+      // Agora temos apenas 2 chamadas: slotRef + bookings query (combinada)
       let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
         callCount++;
@@ -397,13 +412,12 @@ describe('transactions', () => {
         if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Segunda chamada: query confirmed bookings
+        // Segunda chamada: query combinada de bookings (confirmed + pending)
         if (callCount === 2) {
-          return Promise.resolve(mockConfirmedBookings);
-        }
-        // Terceira chamada: query pending bookings
-        if (callCount === 3) {
-          return Promise.resolve(mockPendingBookings);
+          // Retorna a soma de confirmed + pending
+          return Promise.resolve({
+            size: mockConfirmedBookings.size + mockPendingBookings.size,
+          });
         }
         return Promise.resolve({ size: 0 });
       });
@@ -476,6 +490,7 @@ describe('transactions', () => {
       });
 
       // Mock transaction.get com contador de chamadas
+      // Agora temos apenas 2 chamadas: slotRef + bookings query (combinada)
       let callCount = 0;
       mockTransaction.get.mockImplementation((refOrQuery: any) => {
         callCount++;
@@ -483,13 +498,12 @@ describe('transactions', () => {
         if (callCount === 1) {
           return Promise.resolve(mockSlotDoc);
         }
-        // Segunda chamada: query confirmed bookings
+        // Segunda chamada: query combinada de bookings (confirmed + pending)
         if (callCount === 2) {
-          return Promise.resolve(mockConfirmedBookings);
-        }
-        // Terceira chamada: query pending bookings
-        if (callCount === 3) {
-          return Promise.resolve(mockPendingBookings);
+          // Retorna a soma de confirmed + pending
+          return Promise.resolve({
+            size: mockConfirmedBookings.size + mockPendingBookings.size,
+          });
         }
         return Promise.resolve({ size: 0 });
       });

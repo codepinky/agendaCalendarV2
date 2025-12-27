@@ -65,3 +65,11 @@ echo "3. Configure o backend e N8N"
 
 
 
+
+
+
+
+
+
+
+

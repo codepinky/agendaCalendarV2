@@ -78,6 +78,37 @@ export const labels = {
   bookingPending: 'Agendamento pendente...',
   bookingError: 'Erro ao agendar. Tente novamente.',
   
+  // Public Customization
+  customizePublicLink: 'Personalizar Link Público',
+  publicTitle: 'Título da Página',
+  publicTitlePlaceholder: 'Ex: Dr. João Silva - Agendamento',
+  publicTitleHelp: 'Título que aparecerá no topo da sua página de agendamento',
+  socialLinks: 'Redes Sociais',
+  socialLinksHelp: 'Adicione links das suas redes sociais para aparecerem na página pública',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  twitter: 'Twitter/X',
+  telegram: 'Telegram',
+  whatsapp: 'WhatsApp',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  socialLinkPlaceholder: 'https://...',
+  saveCustomization: 'Salvar Customizações',
+  customizationSaved: 'Customizações salvas com sucesso!',
+  profileImage: 'Foto de Perfil',
+  bannerImage: 'Banner',
+  backgroundImage: 'Foto de Fundo',
+  mainUsername: '@ Principal',
+  mainUsernamePlaceholder: '@usuario',
+  mainUsernameHelp: 'Seu @ principal que aparece no perfil',
+  description: 'Descrição/Bio',
+  descriptionPlaceholder: 'Escreva uma descrição sobre você...',
+  descriptionHelp: 'Máximo 500 caracteres',
+  uploadImage: 'Enviar Imagem',
+  removeImage: 'Remover Imagem',
+  changeImage: 'Trocar Imagem',
+  imageUploaded: 'Imagem enviada com sucesso!',
+  
   // Errors
   errorRequired: 'Este campo é obrigatório',
   errorInvalidEmail: 'E-mail inválido',
@@ -86,6 +117,7 @@ export const labels = {
   errorInvalidLicense: 'Código de licença inválido',
   errorInvalidCredentials: 'E-mail ou senha inválidos',
   errorGeneric: 'Ocorreu um erro. Tente novamente.',
+  errorInvalidUrl: 'URL inválida',
 };
 
 export const messages = {

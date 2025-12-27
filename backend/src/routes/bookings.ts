@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
-import { getAvailableSlots, createBookingHandler, getMyBookings } from '../controllers/bookingsController';
+import { getAvailableSlots, createBookingHandler, getMyBookings, getPublicProfile } from '../controllers/bookingsController';
 import { validateCreateBooking } from '../middleware/validation';
 
 const router = Router();
@@ -34,6 +34,38 @@ const router = Router();
  *         description: Link público não encontrado
  */
 router.get('/slots/:publicLink', getAvailableSlots);
+
+/**
+ * @swagger
+ * /api/bookings/public-profile/{publicLink}:
+ *   get:
+ *     summary: Obter perfil público do usuário por link público
+ *     tags: [Bookings]
+ *     parameters:
+ *       - in: path
+ *         name: publicLink
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Link público do usuário
+ *     responses:
+ *       200:
+ *         description: Perfil público do usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                 publicTitle:
+ *                   type: string
+ *                 socialLinks:
+ *                   type: object
+ *       404:
+ *         description: Link público não encontrado
+ */
+router.get('/public-profile/:publicLink', getPublicProfile);
 
 /**
  * @swagger

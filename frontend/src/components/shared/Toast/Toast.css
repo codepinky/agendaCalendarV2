@@ -1,0 +1,117 @@
+.toast {
+  min-width: 300px;
+  max-width: 500px;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  background-color: var(--color-card-background);
+  border: var(--border-width) solid;
+  border-left-width: 4px;
+  animation: toastSlideIn 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.toast-message {
+  flex: 1;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+}
+
+.toast-close:active {
+  transform: scale(0.95);
+}
+
+/* Toast Types */
+.toast-success {
+  border-left-color: var(--color-success);
+  background-color: var(--color-card-background);
+}
+
+.toast-error {
+  border-left-color: var(--color-danger);
+  background-color: var(--color-card-background);
+}
+
+.toast-warning {
+  border-left-color: var(--color-warning);
+  background-color: var(--color-card-background);
+}
+
+.toast-info {
+  border-left-color: var(--color-info);
+  background-color: var(--color-card-background);
+}
+
+/* Animations */
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-exit {
+  animation: toastSlideOut 0.3s ease-in forwards;
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .toast {
+    min-width: auto;
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+
+
+
+

@@ -324,3 +324,11 @@ Isso já cobre 80% das vulnerabilidades comuns.
 
 
 
+
+
+
+
+
+
+
+

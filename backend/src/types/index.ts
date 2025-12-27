@@ -23,12 +23,33 @@ export interface User {
   settings?: UserSettings;
 }
 
+export interface PublicProfile {
+  profileImageUrl?: string;      // URL da foto de perfil
+  bannerImageUrl?: string;        // URL do banner
+  backgroundImageUrl?: string;    // URL da foto de fundo
+  description?: string;           // Bio/descrição (max 500 chars)
+  mainUsername?: string;          // @principal (ex: @joaosilva)
+}
+
+export interface SocialLinks {
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  telegram?: string;
+  whatsapp?: string;
+  tiktok?: string;
+  youtube?: string;
+}
+
 export interface UserSettings {
   defaultStartTime?: string;
   defaultEndTime?: string;
   defaultInterval?: number;
   availableDays?: number[];
   maxBookings?: number;
+  publicTitle?: string;
+  socialLinks?: SocialLinks;
+  publicProfile?: PublicProfile;
 }
 
 export interface AvailableSlot {

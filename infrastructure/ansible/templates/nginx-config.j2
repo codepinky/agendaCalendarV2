@@ -8,13 +8,35 @@ upstream n8n {
     server localhost:{{ n8n_port }};
 }
 
+# Redirecionar HTTP para HTTPS
 server {
     listen 80;
-    server_name {{ ansible_default_ipv4.address }};
+    server_name _;  # Aceitar qualquer host
+    return 301 https://$host$request_uri;
+}
+
+# Servidor HTTPS
+server {
+    listen 443 ssl http2;
+    server_name _;  # Aceitar qualquer host
+    
+    # Certificados SSL (serão configurados pelo Certbot)
+    ssl_certificate /etc/letsencrypt/live/agendacalendar.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/agendacalendar.duckdns.org/privkey.pem;
+    
+    # Configurações SSL
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Configuração para uploads de arquivos
+    client_max_body_size 10M;
+    client_body_buffer_size 128k;
+    client_body_timeout 300s;
 
     # Backend API
-    location /api {
-        proxy_pass http://backend;
+    location /api/ {
+        proxy_pass http://backend/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -25,10 +47,46 @@ server {
         proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 300s;
         proxy_connect_timeout 75s;
+        # Configurações específicas para uploads
+        proxy_request_buffering off;
+        proxy_buffering off;
     }
 
-    # N8N
-    location /n8n {
+    # Health check (mapeia /api/health para /health do backend)
+    location /api/health {
+        proxy_pass http://backend/health;
+        access_log off;
+    }
+    
+    # Health check direto
+    location /health {
+        proxy_pass http://backend/health;
+        access_log off;
+    }
+}
+
+# Servidor N8N (subdomínio separado)
+server {
+    listen 80;
+    server_name n8nagendacalendar.duckdns.org;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name n8nagendacalendar.duckdns.org;
+    
+    # Certificados SSL (mesmo certificado que inclui ambos os domínios)
+    ssl_certificate /etc/letsencrypt/live/agendacalendar.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/agendacalendar.duckdns.org/privkey.pem;
+    
+    # Configurações SSL
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # N8N - Proxy para o container Docker
+    location / {
         proxy_pass http://n8n;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -38,12 +96,8 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-    }
-
-    # Health check
-    location /health {
-        proxy_pass http://backend/health;
-        access_log off;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
     }
 }
 

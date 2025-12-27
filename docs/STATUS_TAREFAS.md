@@ -88,16 +88,18 @@ Este documento mostra o status de todas as tarefas que posso fazer automaticamen
 
 ### 1. MELHORIAS DE CÓDIGO E VALIDAÇÃO
 
-#### ⏳ Otimizações
-- [ ] **Revisar queries Firestore**
+#### ✅ Otimizações (CONCLUÍDAS)
+- [x] **Revisar queries Firestore** ✅
   - Identificar queries que podem ser otimizadas
   - Adicionar índices se necessário
   - Otimizar ordenação em memória
+  - Eliminar N+1 queries
+  - Combinar queries em transações
 
-- [ ] **Melhorar performance**
-  - Cache de dados frequentes
-  - Lazy loading onde apropriado
-  - Debounce em validações
+- [x] **Melhorar performance** ✅
+  - Cache de dados frequentes (licenses, slots, usuário)
+  - Paginação opcional (slots e bookings)
+  - Debounce em validações (license, email, telefone)
 
 ### 2. TESTES AUTOMATIZADOS
 
@@ -127,7 +129,7 @@ Este documento mostra o status de todas as tarefas que posso fazer automaticamen
 
 ## 📊 RESUMO
 
-### ✅ Concluídas: 13 tarefas principais
+### ✅ Concluídas: 16 tarefas principais
 1. ✅ Melhorar mensagens de erro (backend)
 2. ✅ Implementar express-validator
 3. ✅ Validação de assinatura Kiwify
@@ -141,13 +143,14 @@ Este documento mostra o status de todas as tarefas que posso fazer automaticamen
 11. ✅ Testes unitários (transactions - 7 testes)
 12. ✅ Swagger/OpenAPI
 13. ✅ Documentação de variáveis de ambiente
+14. ✅ Revisar queries Firestore (otimizações)
+15. ✅ Cache em memória (licenses, slots, usuário)
+16. ✅ Debounce no frontend (license, email, telefone)
 
-### ⏳ Pendentes: 3 tarefas principais
-1. ⏳ Revisar queries Firestore
-2. ⏳ Melhorar performance (cache, lazy loading, debounce)
-3. ⏳ Testes para authController.ts (baixa prioridade)
+### ⏳ Pendentes: 1 tarefa principal
+1. ⏳ Testes para authController.ts (baixa prioridade)
 
-### 📈 Progresso: ~87% concluído (13/16 tarefas principais)
+### 📈 Progresso: ~94% concluído (16/17 tarefas principais)
 
 ---
 
@@ -177,5 +180,5 @@ Este documento mostra o status de todas as tarefas que posso fazer automaticamen
 
 ---
 
-**Última atualização**: 19/12/2025
+**Última atualização**: 20/12/2025
 

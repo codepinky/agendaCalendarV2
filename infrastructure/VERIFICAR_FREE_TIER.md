@@ -63,3 +63,11 @@ A VM será criada sem custos, dentro dos limites do Always Free da Oracle Cloud.
 
 
 
+
+
+
+
+
+
+
+

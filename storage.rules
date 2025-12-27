@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Regras para imagens de perfil público
+    match /users/{userId}/{allPaths=**} {
+      // Permitir leitura pública (qualquer um pode ler com token na URL)
+      // As URLs são geradas com token de download, então são seguras
+      allow read: if true;
+      
+      // Escrita e deleção apenas via Service Account (backend)
+      // O backend usa service account, então essas operações são feitas server-side
+      allow write: if false; // Bloqueado - apenas service account pode escrever
+      allow delete: if false; // Bloqueado - apenas service account pode deletar
+    }
+  }
+}
+
+
+
+

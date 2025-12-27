@@ -153,3 +153,11 @@ API_URL=https://agendacalendar.duckdns.org
 - Processo de deploy agora é padronizado e automatizado
 - Sempre usar Ansible para evitar problemas de deploy manual
 
+
+
+
+
+
+
+
+

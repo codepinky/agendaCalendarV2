@@ -315,3 +315,11 @@ O Swagger mostra os possíveis códigos de resposta:
 
 Se tiver dúvidas, consulte a documentação de cada endpoint no Swagger ou veja os exemplos acima.
 
+
+
+
+
+
+
+
+

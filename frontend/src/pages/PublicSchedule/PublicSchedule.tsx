@@ -302,10 +302,8 @@ function PublicSchedule() {
             className={`public-profile-banner ${!publicProfile.bannerImageUrl ? 'no-banner' : ''}`}
             style={{
               ...(publicProfile.bannerImageUrl && {
-                backgroundImage: `url(${publicProfile.bannerImageUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }),
+                '--banner-image': `url(${publicProfile.bannerImageUrl})`,
+              } as React.CSSProperties),
             }}
           >
             {publicProfile.profileImageUrl && (

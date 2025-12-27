@@ -4,6 +4,7 @@ import { User } from '../types';
 import { AuthRequest } from '../middleware/auth';
 import crypto from 'crypto';
 import { logger, logSuspiciousActivity, logSecurityError } from '../utils/logger';
+import { userCache, getCacheKey, clearCache } from '../services/cacheService';
 import type admin from 'firebase-admin';
 
 export const register = async (req: Request, res: Response) => {
@@ -58,6 +59,9 @@ export const register = async (req: Request, res: Response) => {
 
       return { success: true };
     });
+
+    // CACHE: Limpar cache da license quando ela é usada
+    clearCache.license(licenseCode);
 
     // If we get here, license was successfully marked as used
     // Now create the user (if this fails, we'll need to handle rollback manually)
@@ -202,6 +206,14 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // CACHE: Verificar se já está em cache
+    const cacheKey = getCacheKey.user(req.user.uid);
+    const cachedUser = userCache.get<User & { id: string }>(cacheKey);
+    
+    if (cachedUser) {
+      return res.json(cachedUser);
+    }
+
     const userDoc = await db.collection('users').doc(req.user.uid).get();
 
     if (!userDoc.exists) {
@@ -212,11 +224,15 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     }
 
     const userData = userDoc.data() as User;
-
-    return res.json({
+    const result = {
       ...userData,
       id: req.user.uid,
-    });
+    };
+
+    // CACHE: Armazenar dados do usuário (TTL: 15 minutos)
+    userCache.set(cacheKey, result);
+
+    return res.json(result);
   } catch (error: any) {
     logger.error('Error getting current user', {
       error: error.message,

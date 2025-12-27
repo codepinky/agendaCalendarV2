@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Alert, Modal, Form } from 'react-bootstrap';
+import { useState, useEffect, useMemo } from 'react';
+import { Container, Row, Col, Modal, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../services/firebase';
@@ -8,10 +8,17 @@ import api from '../../services/api';
 import type { AvailableSlot, User, Booking } from '../../types';
 import Button from '../../components/shared/Button/Button';
 import Input from '../../components/shared/Input/Input';
+import ThemeToggle from '../../components/shared/ThemeToggle/ThemeToggle';
+import CollapsibleCard from '../../components/shared/CollapsibleCard/CollapsibleCard';
+import LoadingOverlay from '../../components/shared/LoadingOverlay/LoadingOverlay';
+import EmptyState from '../../components/shared/EmptyState/EmptyState';
+import { useToast } from '../../hooks/useToast';
+import PublicCustomization from '../../components/PublicCustomization/PublicCustomization';
 import './Dashboard.css';
 
 function Dashboard() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -23,8 +30,6 @@ function Dashboard() {
     endTime: '',
     bufferMinutes: '0',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [creatingSlot, setCreatingSlot] = useState(false);
   const [deletingSlotId, setDeletingSlotId] = useState<string | null>(null);
   const [slotToDelete, setSlotToDelete] = useState<AvailableSlot | null>(null);
@@ -32,6 +37,29 @@ function Dashboard() {
   const [copyingLink, setCopyingLink] = useState(false);
   const [connectingGoogle, setConnectingGoogle] = useState(false);
   const [disconnectingGoogle, setDisconnectingGoogle] = useState(false);
+
+  // Calcular o minTime para o campo de horário de início
+  // Só aplicar restrição se a data selecionada for hoje
+  const startTimeMin = useMemo(() => {
+    if (!slotForm.date) return undefined;
+    
+    // Comparar datas de forma segura (sem hora)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(slotForm.date + 'T00:00:00');
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    // Só aplicar restrição de min se a data selecionada for exatamente hoje
+    if (selectedDate.getTime() === today.getTime()) {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+    
+    // Se a data for futura ou passada, não aplicar min
+    return undefined;
+  }, [slotForm.date]);
 
   useEffect(() => {
     loadUserData();
@@ -41,12 +69,12 @@ function Dashboard() {
     // Check for Google Calendar callback
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('googleCalendarConnected') === 'true') {
-      setSuccess('Google Calendar conectado com sucesso!');
+      toast.success('Google Calendar conectado com sucesso!');
       loadUserData();
       window.history.replaceState({}, '', '/dashboard');
     }
     if (urlParams.get('googleCalendarError') === 'true') {
-      setError('Erro ao conectar com Google Calendar');
+      toast.error('Erro ao conectar com Google Calendar');
       window.history.replaceState({}, '', '/dashboard');
     }
   }, []);
@@ -82,47 +110,108 @@ function Dashboard() {
 
   const handleCreateSlot = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    console.log('🚀 handleCreateSlot chamado', { slotForm });
 
     // Validate date is not in the past
-    const today = new Date().toISOString().split('T')[0];
-    if (slotForm.date < today) {
-      setError('Não é possível criar horário para uma data no passado');
+    // Usar data LOCAL, não UTC, para evitar problemas de timezone
+    const now = new Date();
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
+    
+    console.log('📅 Comparando datas:', { 
+      slotDate: slotForm.date, 
+      today: todayStr, 
+      todayLocal: todayLocal.toLocaleDateString('pt-BR'),
+      nowLocal: now.toLocaleDateString('pt-BR'),
+      isToday: slotForm.date === todayStr, 
+      isFuture: slotForm.date > todayStr 
+    });
+    
+    if (slotForm.date < todayStr) {
+      console.log('❌ Data no passado');
+      toast.error('Não é possível criar horário para uma data no passado');
       return;
     }
 
     // If date is today, validate time is not in the past
-    if (slotForm.date === today) {
-      const now = new Date();
+    // IMPORTANTE: Só validar hora se a data for EXATAMENTE hoje (data local)
+    if (slotForm.date === todayStr) {
+      console.log('📅 Data é HOJE (local), validando hora...');
       const [startHour, startMin] = slotForm.startTime.split(':').map(Number);
-      const slotStartTime = new Date();
-      slotStartTime.setHours(startHour, startMin, 0, 0);
       
-      if (slotStartTime < now) {
-        setError('Não é possível criar horário com hora no passado');
+      // Verificar se os valores são válidos
+      if (isNaN(startHour) || isNaN(startMin)) {
+        console.log('❌ Hora inválida');
+        toast.error('Por favor, informe um horário válido');
         return;
       }
+      
+      // Criar data/hora do slot usando a data local de hoje
+      const slotStartTime = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        startHour,
+        startMin,
+        0,
+        0
+      );
+      
+      console.log('⏰ Comparando horários:', { 
+        slotStartTime: slotStartTime.toISOString(), 
+        now: now.toISOString(),
+        slotStartTimeLocal: slotStartTime.toLocaleString('pt-BR'),
+        nowLocal: now.toLocaleString('pt-BR'),
+        isPast: slotStartTime < now
+      });
+      
+      if (slotStartTime < now) {
+        console.log('❌ Hora no passado');
+        toast.error('Não é possível criar horário com hora no passado');
+        return;
+      }
+    } else {
+      // Data é futura, não precisa validar hora atual
+      console.log('✅ Data é FUTURA, pulando validação de hora');
     }
+
+    // Validação adicional: verificar se campos obrigatórios estão preenchidos
+    if (!slotForm.date || !slotForm.startTime || !slotForm.endTime) {
+      console.log('❌ Campos obrigatórios faltando', { slotForm });
+      toast.error('Por favor, preencha todos os campos obrigatórios');
+      return;
+    }
+
+    const payload = {
+      date: slotForm.date,
+      startTime: slotForm.startTime,
+      endTime: slotForm.endTime,
+      maxBookings: 1, // Sempre 1 agendamento por slot
+      bufferMinutes: parseInt(slotForm.bufferMinutes) || 0,
+    };
+
+    console.log('📤 Enviando requisição:', payload);
 
     setCreatingSlot(true);
     try {
-      await api.post('/slots', {
-        date: slotForm.date,
-        startTime: slotForm.startTime,
-        endTime: slotForm.endTime,
-        maxBookings: 1, // Sempre 1 agendamento por slot
-        bufferMinutes: parseInt(slotForm.bufferMinutes) || 0,
-      });
+      const response = await api.post('/slots', payload);
+      console.log('✅ Resposta do servidor:', response.data);
 
-      setSuccess('Horário criado com sucesso!');
+      toast.success('Horário criado com sucesso!');
       setShowSlotModal(false);
       setSlotForm({ date: '', startTime: '', endTime: '', bufferMinutes: '0' });
       await loadSlots();
       await loadBookings();
     } catch (err: any) {
+      console.error('❌ Erro ao criar slot:', err);
+      console.error('❌ Detalhes do erro:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+      });
       const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
-      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setCreatingSlot(false);
     }
@@ -134,10 +223,9 @@ function Dashboard() {
       try {
         const link = `${window.location.origin}/schedule/${user.publicLink}`;
         await navigator.clipboard.writeText(link);
-        setSuccess('Link copiado!');
-        setTimeout(() => setSuccess(''), 3000);
+        toast.success('Link copiado!');
       } catch (err) {
-        setError('Erro ao copiar link');
+        toast.error('Erro ao copiar link');
       } finally {
         setCopyingLink(false);
       }
@@ -151,7 +239,7 @@ function Dashboard() {
       window.location.href = response.data.authUrl;
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
-      setError(errorMessage);
+      toast.error(errorMessage);
       setConnectingGoogle(false);
     }
   };
@@ -160,11 +248,11 @@ function Dashboard() {
     setDisconnectingGoogle(true);
     try {
       await api.post('/google-calendar/disconnect');
-      setSuccess('Google Calendar desconectado');
+      toast.success('Google Calendar desconectado');
       await loadUserData();
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
-      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setDisconnectingGoogle(false);
     }
@@ -173,28 +261,23 @@ function Dashboard() {
   const handleDeleteSlotClick = (slot: AvailableSlot) => {
     setSlotToDelete(slot);
     setShowDeleteModal(true);
-    setError('');
   };
 
   const handleConfirmDelete = async () => {
     if (!slotToDelete) return;
 
     setDeletingSlotId(slotToDelete.id);
-    setError('');
-    setSuccess('');
 
     try {
       await api.delete(`/slots/${slotToDelete.id}`);
-      setSuccess('Horário deletado com sucesso!');
+      toast.success('Horário deletado com sucesso!');
       setShowDeleteModal(false);
       setSlotToDelete(null);
       await loadSlots();
       await loadBookings();
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
-      setError(errorMessage);
-      setTimeout(() => setError(''), 5000);
+      toast.error(errorMessage);
     } finally {
       setDeletingSlotId(null);
     }
@@ -203,7 +286,6 @@ function Dashboard() {
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setSlotToDelete(null);
-    setError('');
   };
 
   const handleLogout = async () => {
@@ -213,156 +295,155 @@ function Dashboard() {
   };
 
   if (loading) {
-    return <Container className="dashboard-container"><div>Carregando...</div></Container>;
+    return (
+      <Container className="dashboard-container">
+        <LoadingOverlay fullScreen message="Carregando..." />
+      </Container>
+    );
   }
 
   return (
     <Container className="dashboard-container">
       <Row className="dashboard-header">
-        <Col>
+        <Col xs={12} md={8}>
           <h1>{labels.dashboard}</h1>
           <p>Bem-vindo, {user?.name}</p>
         </Col>
-        <Col xs="auto">
+        <Col xs={12} md={4} className="dashboard-header-actions">
+          <ThemeToggle />
           <Button variant="secondary" onClick={handleLogout}>
             Sair
           </Button>
         </Col>
       </Row>
 
-      {error && (
-        <Alert variant="danger" dismissible onClose={() => setError('')}>
-          <Alert.Heading>Erro</Alert.Heading>
-          <p>{error}</p>
-        </Alert>
-      )}
-      {success && (
-        <Alert variant="success" dismissible onClose={() => setSuccess('')}>
-          {success}
-        </Alert>
-      )}
-
       <Row className="dashboard-section">
-        <Col md={6}>
-          <Card className="dashboard-card">
-            <Card.Header>
-              <h3>{labels.publicLink}</h3>
-            </Card.Header>
-            <Card.Body>
-              {user?.publicLink ? (
-                <>
-                  <p className="dashboard-link">
-                    {window.location.origin}/schedule/{user.publicLink}
-                  </p>
-                  <Button onClick={handleCopyLink} disabled={copyingLink}>
-                    {copyingLink ? labels.loading : labels.copyLink}
-                  </Button>
-                </>
-              ) : (
-                <p>Gerando link...</p>
-              )}
-            </Card.Body>
-          </Card>
+        <Col xs={12} md={6} className="mb-3 mb-md-4">
+          <CollapsibleCard title={labels.publicLink}>
+            {user?.publicLink ? (
+              <>
+                <p className="dashboard-link">
+                  {window.location.origin}/schedule/{user.publicLink}
+                </p>
+                <Button onClick={handleCopyLink} disabled={copyingLink}>
+                  {copyingLink ? labels.loading : labels.copyLink}
+                </Button>
+              </>
+            ) : (
+              <p>Gerando link...</p>
+            )}
+          </CollapsibleCard>
         </Col>
 
-        <Col md={6}>
-          <Card className="dashboard-card">
-            <Card.Header>
-              <h3>{labels.googleCalendar}</h3>
-            </Card.Header>
-            <Card.Body>
-              {user?.googleCalendarConnected ? (
-                <>
-                  <Alert variant="success">{labels.googleCalendarConnected}</Alert>
-                  <Button variant="danger" onClick={handleDisconnectGoogleCalendar} disabled={disconnectingGoogle}>
-                    {disconnectingGoogle ? labels.loading : labels.disconnectGoogleCalendar}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Alert variant="warning">{labels.googleCalendarNotConnected}</Alert>
-                  <Button onClick={handleConnectGoogleCalendar} disabled={connectingGoogle}>
-                    {connectingGoogle ? labels.loading : labels.connectGoogleCalendar}
-                  </Button>
-                </>
-              )}
-            </Card.Body>
-          </Card>
+        <Col xs={12} md={6} className="mb-3 mb-md-4">
+          <CollapsibleCard title={labels.googleCalendar}>
+            {user?.googleCalendarConnected ? (
+              <>
+                <p style={{ color: 'var(--color-success)', marginBottom: 'var(--spacing-md)' }}>
+                  {labels.googleCalendarConnected}
+                </p>
+                <Button variant="danger" onClick={handleDisconnectGoogleCalendar} disabled={disconnectingGoogle}>
+                  {disconnectingGoogle ? labels.loading : labels.disconnectGoogleCalendar}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p style={{ color: 'var(--color-warning)', marginBottom: 'var(--spacing-md)' }}>
+                  {labels.googleCalendarNotConnected}
+                </p>
+                <Button onClick={handleConnectGoogleCalendar} disabled={connectingGoogle}>
+                  {connectingGoogle ? labels.loading : labels.connectGoogleCalendar}
+                </Button>
+              </>
+            )}
+          </CollapsibleCard>
         </Col>
       </Row>
 
       <Row className="dashboard-section">
-        <Col md={6}>
-          <Card className="dashboard-card">
-            <Card.Header className="dashboard-card-header">
-              <h3>{labels.availableSlots}</h3>
-              <Button onClick={() => setShowSlotModal(true)}>
+        <Col xs={12} className="mb-3 mb-md-4">
+          <CollapsibleCard title={labels.customizePublicLink}>
+            <PublicCustomization user={user} onUpdate={loadUserData} />
+          </CollapsibleCard>
+        </Col>
+      </Row>
+
+      <Row className="dashboard-section">
+        <Col xs={12} md={6} className="mb-3 mb-md-4">
+          <CollapsibleCard 
+            title={labels.availableSlots}
+            headerActions={
+              <Button size="sm" onClick={() => setShowSlotModal(true)}>
                 {labels.openSlot}
               </Button>
-            </Card.Header>
-            <Card.Body>
-              {slots.length === 0 ? (
-                <p>Nenhum horário disponível. Clique em "Abrir horário" para criar.</p>
-              ) : (
-                <div className="dashboard-slots-list">
-                  {slots.map((slot) => (
-                    <div key={slot.id} className="dashboard-slot-item">
-                      <div>
-                        <strong>{slot.date}</strong> - {slot.startTime} às {slot.endTime}
-                        <span className={`dashboard-slot-status dashboard-slot-status-${slot.status}`}>
-                          {slot.status}
-                        </span>
+            }
+          >
+            {slots.length === 0 ? (
+              <EmptyState
+                message="Nenhum horário disponível. Clique em 'Abrir horário' para criar."
+                action={{
+                  label: labels.openSlot,
+                  onClick: () => setShowSlotModal(true),
+                }}
+              />
+            ) : (
+              <div className="dashboard-slots-list">
+                {slots.map((slot) => (
+                  <div key={slot.id} className="dashboard-slot-item">
+                    <div className="dashboard-slot-info">
+                      <div className="dashboard-slot-date-time">
+                        <span className="dashboard-slot-date">{slot.date}</span>
+                        <span className="dashboard-slot-time">{slot.startTime} - {slot.endTime}</span>
                       </div>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDeleteSlotClick(slot)}
-                        disabled={deletingSlotId === slot.id}
-                      >
-                        {deletingSlotId === slot.id ? labels.loading : labels.delete}
-                      </Button>
+                      <span className={`dashboard-slot-status dashboard-slot-status-${slot.status}`}>
+                        {slot.status === 'available' ? 'Disponível' : 
+                         slot.status === 'reserved' ? 'Reservado' : 'Confirmado'}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card.Body>
-          </Card>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDeleteSlotClick(slot)}
+                      disabled={deletingSlotId === slot.id}
+                    >
+                      {deletingSlotId === slot.id ? labels.loading : labels.delete}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CollapsibleCard>
         </Col>
 
-        <Col md={6}>
-          <Card className="dashboard-card">
-            <Card.Header>
-              <h3>Agendamentos</h3>
-            </Card.Header>
-            <Card.Body>
-              {bookings.length === 0 ? (
-                <p>Nenhum agendamento ainda.</p>
-              ) : (
-                <div className="dashboard-bookings-list">
-                  {bookings.map((booking) => (
-                    <div key={booking.id} className="dashboard-booking-item">
-                      <div className="dashboard-booking-header">
-                        <strong>{booking.clientName}</strong>
-                        <span className={`dashboard-booking-status dashboard-booking-status-${booking.status}`}>
-                          {booking.status === 'confirmed' ? 'Confirmado' : 
-                           booking.status === 'pending' ? 'Pendente' : 'Cancelado'}
-                        </span>
-                      </div>
-                      <div className="dashboard-booking-details">
-                        <p><strong>Data:</strong> {booking.date} - {booking.startTime} às {booking.endTime}</p>
-                        <p><strong>Email:</strong> {booking.clientEmail}</p>
-                        <p><strong>Telefone:</strong> {booking.clientPhone}</p>
-                        {booking.notes && <p><strong>Observações:</strong> {booking.notes}</p>}
-                        <p className="dashboard-booking-meta">
-                          Agendado em: {new Date(booking.reservedAt).toLocaleString('pt-BR')}
-                        </p>
-                      </div>
+        <Col xs={12} md={6} className="mb-3 mb-md-4">
+          <CollapsibleCard title="Agendamentos">
+            {bookings.length === 0 ? (
+              <EmptyState message="Nenhum agendamento ainda." />
+            ) : (
+              <div className="dashboard-bookings-list">
+                {bookings.map((booking) => (
+                  <div key={booking.id} className="dashboard-booking-item">
+                    <div className="dashboard-booking-header">
+                      <strong>{booking.clientName}</strong>
+                      <span className={`dashboard-booking-status dashboard-booking-status-${booking.status}`}>
+                        {booking.status === 'confirmed' ? 'Confirmado' : 
+                         booking.status === 'pending' ? 'Pendente' : 'Cancelado'}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card.Body>
-          </Card>
+                    <div className="dashboard-booking-details">
+                      <p><strong>Data:</strong> {booking.date} - {booking.startTime} às {booking.endTime}</p>
+                      <p><strong>Email:</strong> {booking.clientEmail}</p>
+                      <p><strong>Telefone:</strong> {booking.clientPhone}</p>
+                      {booking.notes && <p><strong>Observações:</strong> {booking.notes}</p>}
+                      <p className="dashboard-booking-meta">
+                        Agendado em: {new Date(booking.reservedAt).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CollapsibleCard>
         </Col>
       </Row>
 
@@ -378,32 +459,25 @@ function Dashboard() {
               value={slotForm.date}
               onChange={(e) => {
                 const newDate = e.target.value;
+                const today = new Date().toISOString().split('T')[0];
                 setSlotForm({ 
                   ...slotForm, 
                   date: newDate,
                   // Reset times if date changed to past
-                  startTime: newDate < new Date().toISOString().split('T')[0] ? '' : slotForm.startTime,
-                  endTime: newDate < new Date().toISOString().split('T')[0] ? '' : slotForm.endTime,
+                  startTime: newDate < today ? '' : slotForm.startTime,
+                  endTime: newDate < today ? '' : slotForm.endTime,
                 });
               }}
               min={new Date().toISOString().split('T')[0]}
               required
             />
             <Input
+              key={`startTime-${slotForm.date || 'no-date'}`}
               type="time"
               label={labels.startTime}
               value={slotForm.startTime}
               onChange={(e) => setSlotForm({ ...slotForm, startTime: e.target.value })}
-              min={(() => {
-                const today = new Date().toISOString().split('T')[0];
-                if (slotForm.date === today) {
-                  const now = new Date();
-                  const hours = String(now.getHours()).padStart(2, '0');
-                  const minutes = String(now.getMinutes()).padStart(2, '0');
-                  return `${hours}:${minutes}`;
-                }
-                return undefined;
-              })()}
+              min={startTimeMin}
               required
             />
             <Input
@@ -449,9 +523,14 @@ function Dashboard() {
               <strong>Status:</strong> {slotToDelete.status}
             </div>
           )}
-          <Alert variant="warning" className="mt-3">
-            Esta ação não pode ser desfeita. Se houver agendamentos confirmados, a exclusão será bloqueada.
-          </Alert>
+          <div className="mt-3 p-3" style={{ 
+            backgroundColor: 'var(--color-warning)', 
+            color: 'var(--color-text-inverse)', 
+            borderRadius: 'var(--border-radius-lg)',
+            fontSize: 'var(--font-size-sm)'
+          }}>
+            ⚠️ Esta ação não pode ser desfeita. Se houver agendamentos confirmados, a exclusão será bloqueada.
+          </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCancelDelete} disabled={deletingSlotId !== null}>

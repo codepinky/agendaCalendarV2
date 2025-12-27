@@ -1,5 +1,15 @@
 .booking-form-container {
   width: 100%;
+  background-color: var(--color-card-background);
+  border: var(--border-width) solid var(--color-card-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  transition: all var(--transition-base);
+}
+
+.booking-form-container:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Mobile First */
@@ -8,8 +18,3 @@
     max-width: 500px;
   }
 }
-
-
-
-
-
