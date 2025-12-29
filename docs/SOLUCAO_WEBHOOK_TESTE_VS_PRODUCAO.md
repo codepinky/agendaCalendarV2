@@ -101,3 +101,5 @@ Se após ativar ainda não funcionar:
    docker-compose logs -f n8n
    ```
 
+
+

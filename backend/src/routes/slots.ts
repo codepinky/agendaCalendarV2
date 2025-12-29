@@ -66,10 +66,18 @@ router.post('/', ...validateCreateSlot, createSlotHandler);
  * @swagger
  * /api/slots:
  *   get:
- *     summary: Listar todos os horários do usuário
+ *     summary: Listar horários do usuário
  *     tags: [Slots]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: includePast
+ *         required: false
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: Se true, inclui slots passados (histórico). Se false ou omitido, retorna apenas slots futuros.
  *     responses:
  *       200:
  *         description: Lista de horários

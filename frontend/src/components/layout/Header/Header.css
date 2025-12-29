@@ -1,0 +1,290 @@
+.dashboard-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background-color: var(--color-background-secondary);
+  border-bottom: var(--border-width) solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-md);
+  z-index: 1040;
+  transition: all var(--transition-base);
+}
+
+[data-theme="dark"] .dashboard-header {
+  background-color: var(--color-background-tertiary);
+  border-bottom-color: var(--color-border);
+}
+
+.dashboard-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-header-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-base);
+}
+
+.dashboard-header-toggle:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-primary);
+}
+
+@media (min-width: 768px) {
+  .dashboard-header-toggle {
+    display: none;
+  }
+}
+
+.dashboard-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+}
+
+.dashboard-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  white-space: nowrap;
+}
+
+.dashboard-breadcrumb-separator {
+  color: var(--color-text-tertiary);
+  margin: 0 var(--spacing-xs);
+}
+
+.dashboard-breadcrumb-current {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.dashboard-header-profile {
+  position: relative;
+}
+
+.dashboard-header-profile-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: transparent;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.dashboard-header-profile-button:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.dashboard-header-profile-photo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-border);
+}
+
+.dashboard-header-profile-initials {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border: 2px solid var(--color-border);
+}
+
+.dashboard-header-profile-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .dashboard-header-profile-name {
+    display: block;
+  }
+}
+
+.dashboard-header-profile-chevron {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  transition: transform var(--transition-base);
+}
+
+.dashboard-header-profile-chevron.open {
+  transform: rotate(180deg);
+}
+
+.dashboard-header-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-sm));
+  right: 0;
+  min-width: 240px;
+  background-color: var(--color-card-background);
+  border: var(--border-width) solid var(--color-card-border);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 1050;
+  overflow: hidden;
+  animation: dropdownFadeIn var(--transition-base);
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-header-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--color-background-secondary);
+}
+
+[data-theme="dark"] .dashboard-header-dropdown-header {
+  background-color: var(--color-background-tertiary);
+}
+
+.dashboard-header-dropdown-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-border);
+}
+
+.dashboard-header-dropdown-initials {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.dashboard-header-dropdown-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-header-dropdown-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-header-dropdown-email {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-header-dropdown-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: var(--spacing-xs) 0;
+}
+
+.dashboard-header-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.dashboard-header-dropdown-item:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-primary);
+}
+
+.dashboard-header-dropdown-icon {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.dashboard-header-dropdown-item:hover .dashboard-header-dropdown-icon {
+  color: var(--color-primary);
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .dashboard-header {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .dashboard-breadcrumbs {
+    font-size: var(--font-size-xs);
+  }
+
+  .dashboard-header-dropdown {
+    right: var(--spacing-sm);
+    min-width: 200px;
+  }
+}
+
+
+

@@ -1,5 +1,8 @@
 import { db } from './firebase';
 import { AvailableSlot } from '../types';
+import { parseSaoPauloDateTimeToTimestamp, getCurrentDateTimeInSaoPaulo } from '../utils/timezone';
+import { logger } from '../utils/logger';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export const createSlot = async (userId: string, slotData: Omit<AvailableSlot, 'id' | 'createdAt'>) => {
   const slotsRef = db.collection('users').doc(userId).collection('availableSlots');
@@ -60,9 +63,13 @@ export const createSlot = async (userId: string, slotData: Omit<AvailableSlot, '
     }
   }
 
+  // Calcular slotDateTime (timestamp) para queries eficientes no Firestore
+  const slotDateTime = parseSaoPauloDateTimeToTimestamp(slotData.date, slotData.startTime);
+
   const newSlot: Omit<AvailableSlot, 'id'> = {
     ...slotData,
     createdAt: new Date().toISOString(),
+    slotDateTime, // Adicionar timestamp calculado para queries eficientes
   };
 
   const docRef = await slotsRef.add(newSlot);
@@ -73,11 +80,35 @@ export const createSlot = async (userId: string, slotData: Omit<AvailableSlot, '
   };
 };
 
-export const getSlots = async (userId: string, options?: { limit?: number; offset?: number; status?: string[] }) => {
+export const getSlots = async (userId: string, options?: { limit?: number; offset?: number; status?: string[]; includePast?: boolean }) => {
   const slotsRef = db.collection('users').doc(userId).collection('availableSlots');
   
   // OPTIMIZATION: Add Firestore filters if provided
   let query: FirebaseFirestore.Query = slotsRef;
+  
+  // OPTIMIZATION: Use slotDateTime for efficient Firestore queries
+  // This filters both date AND time directly in Firestore, avoiding unnecessary data transfer
+  // Note: Slots without slotDateTime field won't be returned (only new slots have this field)
+  const nowInSaoPaulo = getCurrentDateTimeInSaoPaulo(); // Get current Date object in SP timezone
+  const nowTimestamp = Timestamp.fromDate(nowInSaoPaulo); // Convert to Firestore Timestamp
+  
+  if (options?.includePast === true) {
+    // Para histórico: retornar apenas slots que JÁ PASSARAM
+    query = query.where('slotDateTime', '<', nowTimestamp);
+    logger.info('Filtrando slots PASSADOS por slotDateTime no Firestore (histórico)', {
+      nowISO: nowInSaoPaulo.toISOString(),
+      nowTimestamp: nowTimestamp.toDate().toISOString(),
+      includePast: options?.includePast,
+    });
+  } else {
+    // Para ativos: retornar apenas slots FUTUROS (ainda não passaram)
+    query = query.where('slotDateTime', '>=', nowTimestamp);
+    logger.info('Filtrando slots FUTUROS por slotDateTime no Firestore (ativos)', {
+      nowISO: nowInSaoPaulo.toISOString(),
+      nowTimestamp: nowTimestamp.toDate().toISOString(),
+      includePast: options?.includePast,
+    });
+  }
   
   if (options?.status && options.status.length > 0) {
     // Firestore 'in' operator supports up to 10 values
@@ -97,12 +128,28 @@ export const getSlots = async (userId: string, options?: { limit?: number; offse
     ...doc.data(),
   } as AvailableSlot));
   
+  // OPTIMIZATION: With slotDateTime query, Firestore already filters past slots efficiently
+  // No need for additional in-memory filtering - the query does it all at the database level
+  // This reduces data transfer and improves performance
+  logger.info('Slots retornados do Firestore (já filtrados por slotDateTime)', {
+    totalSlots: slots.length,
+    includePast: options?.includePast,
+  });
+  
   // Sort in memory: first by date, then by startTime
+  // For past slots (includePast=true), sort descending (most recent first)
+  // For future slots (includePast=false), sort ascending (earliest first)
   const sorted = slots.sort((a, b) => {
     if (a.date !== b.date) {
-      return a.date.localeCompare(b.date);
+      if (options?.includePast === true) {
+        return b.date.localeCompare(a.date); // Descending for past slots
+      }
+      return a.date.localeCompare(b.date); // Ascending for future slots
     }
-    return a.startTime.localeCompare(b.startTime);
+    if (options?.includePast === true) {
+      return b.startTime.localeCompare(a.startTime); // Descending for past slots
+    }
+    return a.startTime.localeCompare(b.startTime); // Ascending for future slots
   });
   
   // Apply offset if provided (after sorting)

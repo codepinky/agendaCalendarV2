@@ -6,6 +6,7 @@ import type { SocialLinks, User, PublicProfile } from '../../types';
 import Button from '../shared/Button/Button';
 import Input from '../shared/Input/Input';
 import ImageUpload from '../ImageUpload/ImageUpload';
+import BannerPositionEditor from '../BannerPositionEditor/BannerPositionEditor';
 import { useToast } from '../../hooks/useToast';
 import './PublicCustomization.css';
 
@@ -33,6 +34,7 @@ const PublicCustomization = ({ user, onUpdate }: PublicCustomizationProps) => {
     youtube: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showBannerPositionEditor, setShowBannerPositionEditor] = useState(false);
 
   useEffect(() => {
     if (user?.settings) {
@@ -40,6 +42,8 @@ const PublicCustomization = ({ user, onUpdate }: PublicCustomizationProps) => {
       setPublicProfile({
         profileImageUrl: user.settings.publicProfile?.profileImageUrl,
         bannerImageUrl: user.settings.publicProfile?.bannerImageUrl,
+        bannerPositionX: user.settings.publicProfile?.bannerPositionX ?? 50,
+        bannerPositionY: user.settings.publicProfile?.bannerPositionY ?? 50,
         backgroundImageUrl: user.settings.publicProfile?.backgroundImageUrl,
         description: user.settings.publicProfile?.description || '',
         mainUsername: user.settings.publicProfile?.mainUsername || '',
@@ -188,7 +192,35 @@ const PublicCustomization = ({ user, onUpdate }: PublicCustomizationProps) => {
     setPublicProfile(prev => ({
       ...prev,
       [`${type}ImageUrl`]: undefined,
+      // Resetar posição do banner se remover
+      ...(type === 'banner' && {
+        bannerPositionX: 50,
+        bannerPositionY: 50,
+      }),
     }));
+  };
+
+  const handleBannerPositionSave = async (positionX: number, positionY: number) => {
+    // Atualizar estado local primeiro
+    setPublicProfile(prev => ({
+      ...prev,
+      bannerPositionX: positionX,
+      bannerPositionY: positionY,
+    }));
+
+    // Salvar automaticamente no backend
+    try {
+      await updatePublicCustomization({
+        publicProfile: {
+          bannerPositionX: positionX,
+          bannerPositionY: positionY,
+        },
+      });
+      toast.success('Posição do banner salva com sucesso!');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
+      toast.error(errorMessage);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -250,6 +282,8 @@ const PublicCustomization = ({ user, onUpdate }: PublicCustomizationProps) => {
           // URLs de imagens já foram atualizadas via upload separado
           profileImageUrl: publicProfile.profileImageUrl,
           bannerImageUrl: publicProfile.bannerImageUrl,
+          bannerPositionX: publicProfile.bannerPositionX,
+          bannerPositionY: publicProfile.bannerPositionY,
           backgroundImageUrl: publicProfile.backgroundImageUrl,
         },
       });
@@ -294,6 +328,10 @@ const PublicCustomization = ({ user, onUpdate }: PublicCustomizationProps) => {
           onImageSelect={(file) => handleImageUpload(file, 'banner')}
           onImageRemove={() => handleImageRemove('banner')}
           helpText="Imagem que aparece no topo do perfil"
+          showPositionEditor={!!publicProfile.bannerImageUrl}
+          onPositionEditorOpen={() => setShowBannerPositionEditor(true)}
+          positionX={publicProfile.bannerPositionX ?? 50}
+          positionY={publicProfile.bannerPositionY ?? 50}
         />
 
         <ImageUpload
@@ -405,6 +443,18 @@ const PublicCustomization = ({ user, onUpdate }: PublicCustomizationProps) => {
       <Button type="submit" disabled={loading || uploadingImage !== null}>
         {loading || uploadingImage ? labels.loading : labels.saveCustomization}
       </Button>
+
+      {/* Modal de Ajuste de Posição do Banner */}
+      {publicProfile.bannerImageUrl && (
+        <BannerPositionEditor
+          imageUrl={publicProfile.bannerImageUrl}
+          currentPositionX={publicProfile.bannerPositionX ?? 50}
+          currentPositionY={publicProfile.bannerPositionY ?? 50}
+          onSave={handleBannerPositionSave}
+          onClose={() => setShowBannerPositionEditor(false)}
+          show={showBannerPositionEditor}
+        />
+      )}
     </Form>
   );
 };

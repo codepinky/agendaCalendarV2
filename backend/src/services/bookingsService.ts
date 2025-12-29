@@ -3,6 +3,8 @@ import { Booking, AvailableSlot, User } from '../types';
 import { processBookingTransaction } from '../utils/transactions';
 import { createCalendarEvent } from './googleCalendarService';
 import { slotsCache, getCacheKey, clearCache } from './cacheService';
+import { getTodayInSaoPaulo, isSlotInPast } from '../utils/timezone';
+import { logger } from '../utils/logger';
 
 export const getAvailableSlotsByPublicLink = async (publicLink: string) => {
   // CACHE: Verificar se já está em cache
@@ -24,11 +26,13 @@ export const getAvailableSlotsByPublicLink = async (publicLink: string) => {
   const userId = userSnapshot.docs[0].id;
   const slotsRef = db.collection('users').doc(userId).collection('availableSlots');
   
-  // Get current date for filtering future slots
-  const today = new Date().toISOString().split('T')[0];
+  // Get current date in São Paulo timezone for filtering future slots
+  const today = getTodayInSaoPaulo();
   
   // OPTIMIZATION: Filter by status and date in Firestore to reduce data transfer
-  // Only get slots that are available/reserved and in the future
+  // Only get slots that are available/reserved and today or in the future
+  // Note: We still need to filter by time after fetching because Firestore
+  // only compares dates, not date+time
   const slotsSnapshot = await slotsRef
     .where('status', 'in', ['available', 'reserved'])
     .where('date', '>=', today)
@@ -62,8 +66,15 @@ export const getAvailableSlotsByPublicLink = async (publicLink: string) => {
     bookingsBySlotId.set(booking.slotId, count + 1);
   });
 
-  // Filter out fully booked slots using the pre-computed map
+  // Filter out slots that have already passed (considering date + time in São Paulo timezone)
+  // and fully booked slots
   const availableSlots = slots.filter(slot => {
+    // Skip slots that have already passed
+    if (isSlotInPast(slot)) {
+      return false;
+    }
+    
+    // Check if slot is fully booked
     const confirmedCount = bookingsBySlotId.get(slot.id) || 0;
     return confirmedCount < slot.maxBookings;
   });
@@ -202,6 +213,8 @@ export const getPublicProfileByLink = async (publicLink: string) => {
     // Novos campos do perfil público
     profileImageUrl: publicProfile.profileImageUrl,
     bannerImageUrl: publicProfile.bannerImageUrl,
+    bannerPositionX: publicProfile.bannerPositionX ?? 50, // Padrão: centro (50%)
+    bannerPositionY: publicProfile.bannerPositionY ?? 50, // Padrão: centro (50%)
     backgroundImageUrl: publicProfile.backgroundImageUrl,
     description: publicProfile.description,
     mainUsername: publicProfile.mainUsername,

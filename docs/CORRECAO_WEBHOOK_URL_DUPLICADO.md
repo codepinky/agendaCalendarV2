@@ -105,3 +105,5 @@ docker-compose restart n8n
 - [ ] URL na Kiwify está atualizada
 - [ ] Teste manual funcionou
 
+
+

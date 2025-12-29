@@ -163,14 +163,45 @@ export const updatePublicCustomization = async (
     if (currentPublicProfile.backgroundImageUrl) {
       updatedPublicProfile.backgroundImageUrl = currentPublicProfile.backgroundImageUrl;
     }
+    
+    // Atualizar posições do banner se fornecidas
+    if (customizationData.publicProfile.bannerPositionX !== undefined) {
+      updatedPublicProfile.bannerPositionX = Math.max(0, Math.min(100, customizationData.publicProfile.bannerPositionX));
+    } else if (currentPublicProfile.bannerPositionX !== undefined) {
+      updatedPublicProfile.bannerPositionX = currentPublicProfile.bannerPositionX;
+    }
+    if (customizationData.publicProfile.bannerPositionY !== undefined) {
+      updatedPublicProfile.bannerPositionY = Math.max(0, Math.min(100, customizationData.publicProfile.bannerPositionY));
+    } else if (currentPublicProfile.bannerPositionY !== undefined) {
+      updatedPublicProfile.bannerPositionY = currentPublicProfile.bannerPositionY;
+    }
 
     updatedSettings.publicProfile = updatedPublicProfile;
   }
 
   // Atualizar no Firestore
-  await userRef.update({
-    settings: updatedSettings,
-  });
+  // IMPORTANTE: Usar dot notation para atualizar settings.publicProfile para garantir merge correto
+  // Isso evita que campos do publicProfile sejam perdidos quando atualizamos apenas alguns campos
+  const updateData: any = {};
+  
+  if (customizationData.publicTitle !== undefined) {
+    updateData['settings.publicTitle'] = updatedSettings.publicTitle;
+  }
+  
+  if (customizationData.socialLinks !== undefined) {
+    updateData['settings.socialLinks'] = updatedSettings.socialLinks;
+  }
+  
+  if (customizationData.publicProfile !== undefined) {
+    // Usar dot notation para atualizar apenas o publicProfile
+    // Isso garante que o merge seja feito corretamente no Firestore
+    updateData['settings.publicProfile'] = updatedSettings.publicProfile;
+  }
+  
+  // Fazer update apenas se houver algo para atualizar
+  if (Object.keys(updateData).length > 0) {
+    await userRef.update(updateData);
+  }
 
   // Limpar cache do usuário (para refletir mudanças no getCurrentUser)
   clearCache.user(userId);

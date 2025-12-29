@@ -1,0 +1,123 @@
+.banner-position-editor-modal .modal-content {
+  border-radius: 12px;
+}
+
+.banner-position-editor-content {
+  padding: 0.5rem 0;
+}
+
+.banner-position-preview {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: move;
+  border: 2px solid var(--bs-border-color);
+  background-color: #f8f9fa;
+  margin-bottom: 1.5rem;
+}
+
+.banner-position-preview:hover {
+  border-color: var(--bs-primary);
+}
+
+.banner-position-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.banner-position-crosshair {
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.banner-position-crosshair::before,
+.banner-position-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.banner-position-crosshair::before {
+  width: 2px;
+  height: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.banner-position-crosshair::after {
+  height: 2px;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.banner-position-hint {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  margin: 0;
+  pointer-events: none;
+}
+
+.banner-position-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.banner-position-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.banner-position-control-group label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--bs-body-color);
+}
+
+.banner-position-control-group .form-range {
+  width: 100%;
+  height: 0.5rem;
+  cursor: pointer;
+}
+
+.banner-position-control-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--bs-secondary);
+  margin-top: 0.25rem;
+}
+
+[data-theme="dark"] .banner-position-preview {
+  background-color: #1a1a1a;
+  border-color: var(--bs-border-color);
+}
+
+[data-theme="dark"] .banner-position-hint {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+

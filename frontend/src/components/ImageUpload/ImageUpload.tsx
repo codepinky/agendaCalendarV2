@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Form } from 'react-bootstrap';
 import Button from '../shared/Button/Button';
 import './ImageUpload.css';
@@ -11,6 +11,10 @@ interface ImageUploadProps {
   maxSizeMB?: number;
   accept?: string;
   helpText?: string;
+  showPositionEditor?: boolean;
+  onPositionEditorOpen?: () => void;
+  positionX?: number;
+  positionY?: number;
 }
 
 const ImageUpload = ({
@@ -21,10 +25,24 @@ const ImageUpload = ({
   maxSizeMB = 5,
   accept = 'image/jpeg,image/jpg,image/png,image/webp',
   helpText,
+  showPositionEditor = false,
+  onPositionEditorOpen,
+  positionX = 50,
+  positionY = 50,
 }: ImageUploadProps) => {
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
   const [error, setError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Atualizar preview quando currentImageUrl mudar (quando imagens já existentes são carregadas)
+  useEffect(() => {
+    if (currentImageUrl) {
+      setPreview(currentImageUrl);
+    } else if (!preview) {
+      // Só limpar preview se não houver currentImageUrl e não houver preview local
+      setPreview(null);
+    }
+  }, [currentImageUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,8 +93,28 @@ const ImageUpload = ({
       <div className="image-upload-preview-container">
         {preview ? (
           <div className="image-upload-preview">
-            <img src={preview} alt="Preview" />
+            {showPositionEditor ? (
+              <div 
+                className="image-upload-preview-banner"
+                style={{
+                  backgroundImage: `url(${preview})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: `${positionX}% ${positionY}%`,
+                  backgroundRepeat: 'no-repeat',
+                  width: '100%',
+                  height: '200px',
+                }}
+                key={`banner-${positionX}-${positionY}`}
+              />
+            ) : (
+              <img src={preview} alt="Preview" />
+            )}
             <div className="image-upload-actions">
+              {showPositionEditor && onPositionEditorOpen && (
+                <Button size="sm" variant="primary" onClick={onPositionEditorOpen}>
+                  Ajustar Posição
+                </Button>
+              )}
               <Button size="sm" variant="secondary" onClick={handleClick}>
                 Trocar
               </Button>
@@ -111,6 +149,8 @@ const ImageUpload = ({
 };
 
 export default ImageUpload;
+
+
 
 
 

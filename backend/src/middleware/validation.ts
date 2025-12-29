@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { body, validationResult } = require('express-validator');
 import { Request, Response, NextFunction } from 'express';
+import { getTodayInSaoPaulo } from '../utils/timezone';
 
 // Middleware para processar erros de validação
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
@@ -15,6 +16,15 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
     const missingFields = errorMessages
       .filter((err: any) => err.message.includes('obrigatório'))
       .map((err: any) => err.field);
+    
+    const logger = require('../utils/logger').logger;
+    logger.error('Validation errors', {
+      endpoint: req.path,
+      method: req.method,
+      body: req.body,
+      errors: errorMessages,
+      missingFields,
+    });
     
     return res.status(400).json({
       error: missingFields.length > 0 
@@ -68,11 +78,11 @@ export const validateCreateSlot = [
     .matches(/^\d{4}-\d{2}-\d{2}$/)
     .withMessage('Formato de data inválido. Use YYYY-MM-DD')
     .custom((value: string) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const slotDate = new Date(value);
-      slotDate.setHours(0, 0, 0, 0);
+      // Usar timezone de São Paulo para comparação correta
+      const today = getTodayInSaoPaulo(); // Retorna YYYY-MM-DD
+      const slotDate = value; // Já vem no formato YYYY-MM-DD
       
+      // Comparação de strings YYYY-MM-DD funciona corretamente
       if (slotDate < today) {
         throw new Error('Não é possível criar horário para uma data no passado');
       }

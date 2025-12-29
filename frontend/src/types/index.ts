@@ -26,6 +26,8 @@ export interface User {
 export interface PublicProfile {
   profileImageUrl?: string;      // URL da foto de perfil
   bannerImageUrl?: string;        // URL do banner
+  bannerPositionX?: number;        // Posição horizontal do banner (0-100, padrão 50 = center)
+  bannerPositionY?: number;        // Posição vertical do banner (0-100, padrão 50 = center)
   backgroundImageUrl?: string;    // URL da foto de fundo
   description?: string;           // Bio/descrição (max 500 chars)
   mainUsername?: string;          // @principal (ex: @joaosilva)

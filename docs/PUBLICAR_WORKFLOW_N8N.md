@@ -133,3 +133,5 @@ Procure por mensagens como:
 
 Em versões mais antigas do N8N, havia um toggle "Active/Inactive". Nas versões mais recentes, isso foi substituído pelo botão "Publish". O conceito é o mesmo: o workflow precisa estar "publicado" para receber webhooks de produção.
 
+
+

@@ -112,3 +112,5 @@ A URL final é construída assim:
 - Seu path no node: `agendamento/kiwify-bdbe5c330b909380`
 - **Resultado:** `/webhook/agendamento/kiwify-bdbe5c330b909380` ✅
 
+
+

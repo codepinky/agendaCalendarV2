@@ -71,3 +71,5 @@ Após configurar, teste chamando o backend do N8N. Se o secret estiver correto, 
 - **Valor:** Deve ser **idêntico** em ambos
 - **Valor atual:** `b4b88d0b519c6d1d75261a30788567672b66fda492f2df9c4e00f36de877cea2`
 
+
+

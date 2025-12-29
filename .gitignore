@@ -48,6 +48,12 @@ pnpm-debug.log*
 **/*.cer
 
 # =========================
+# Firebase
+# =========================
+.firebase/**/*.cache
+.firebase/hosting.*.cache
+
+# =========================
 # OS / IDE
 # =========================
 .DS_Store

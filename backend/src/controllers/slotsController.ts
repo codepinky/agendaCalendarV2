@@ -6,7 +6,6 @@ import { sanitizeString } from '../utils/validation';
 import { logger } from '../utils/logger';
 import { db } from '../services/firebase';
 import { clearCache } from '../services/cacheService';
-
 export const createSlotHandler = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -18,19 +17,21 @@ export const createSlotHandler = async (req: AuthRequest, res: Response) => {
     // maxBookings sempre será 1 (removido do frontend, mantido para compatibilidade)
 
     // Validação adicional: se data é hoje, verificar que hora não é no passado
-    // Comparar apenas as datas (sem hora) para evitar problemas de timezone
-    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    // Usar timezone de São Paulo para comparação correta
+    const { getTodayInSaoPaulo, getCurrentDateTimeInSaoPaulo } = require('../utils/timezone');
+    const todayStr = getTodayInSaoPaulo(); // YYYY-MM-DD no timezone de São Paulo
     const slotDateStr = date; // Já vem no formato YYYY-MM-DD
     
     // Só validar hora se a data for exatamente hoje
     if (slotDateStr === todayStr) {
-      const now = new Date();
+      const now = getCurrentDateTimeInSaoPaulo(); // Data/hora atual em São Paulo
       const [startHour, startMin] = startTime.split(':').map(Number);
-      const slotStartTime = new Date();
-      slotStartTime.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
-      slotStartTime.setHours(startHour, startMin, 0, 0);
       
-      if (slotStartTime < now) {
+      // Criar data/hora do slot em São Paulo
+      const slotDateTime = new Date(now);
+      slotDateTime.setHours(startHour, startMin, 0, 0);
+      
+      if (slotDateTime < now) {
         const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         return res.status(400).json({ 
           error: 'Não é possível criar horário com hora no passado',
@@ -106,7 +107,24 @@ export const getSlotsHandler = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const slots = await getSlots(req.user.uid);
+    // Parse query parameter includePast (default: false)
+    const includePastParam = req.query.includePast;
+    const includePast = includePastParam === 'true' || includePastParam === '1';
+    
+    
+    logger.info('getSlotsHandler chamado', {
+      includePastParam,
+      includePast,
+      userId: req.user.uid,
+    });
+
+    const slots = await getSlots(req.user.uid, { includePast });
+    
+    logger.info('getSlotsHandler retornando slots', {
+      userId: req.user.uid,
+      slotsCount: slots.length,
+      includePast,
+    });
     return res.json(slots);
   } catch (error: any) {
     logger.error('Error getting slots', {

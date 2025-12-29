@@ -24,6 +24,8 @@ function PublicSchedule() {
   const [publicProfile, setPublicProfile] = useState<{
     profileImageUrl?: string;
     bannerImageUrl?: string;
+    bannerPositionX?: number;
+    bannerPositionY?: number;
     backgroundImageUrl?: string;
     description?: string;
     mainUsername?: string;
@@ -130,6 +132,8 @@ function PublicSchedule() {
       setPublicProfile({
         profileImageUrl: response.data.profileImageUrl,
         bannerImageUrl: response.data.bannerImageUrl,
+        bannerPositionX: response.data.bannerPositionX ?? 50,
+        bannerPositionY: response.data.bannerPositionY ?? 50,
         backgroundImageUrl: response.data.backgroundImageUrl,
         description: response.data.description,
         mainUsername: response.data.mainUsername,
@@ -209,10 +213,51 @@ function PublicSchedule() {
     }
   }, [debouncedPhone]);
 
+  // Função para verificar se um slot já passou (considerando timezone de São Paulo UTC-3)
+  const isSlotInPast = (slot: AvailableSlot): boolean => {
+    // Obter data/hora atual em São Paulo (UTC-3)
+    const now = new Date();
+    // Ajustar para timezone de São Paulo (UTC-3)
+    const saoPauloOffset = -3 * 60; // UTC-3 em minutos
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const saoPauloTime = new Date(utcTime + (saoPauloOffset * 60000));
+    
+    // Obter data atual em São Paulo (YYYY-MM-DD)
+    const year = saoPauloTime.getFullYear();
+    const month = String(saoPauloTime.getMonth() + 1).padStart(2, '0');
+    const day = String(saoPauloTime.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    // Obter hora atual em São Paulo (HH:mm)
+    const hours = String(saoPauloTime.getHours()).padStart(2, '0');
+    const minutes = String(saoPauloTime.getMinutes()).padStart(2, '0');
+    const nowTimeStr = `${hours}:${minutes}`;
+    
+    // Comparar datas primeiro
+    if (slot.date < todayStr) {
+      return true; // Data já passou
+    }
+    
+    if (slot.date > todayStr) {
+      return false; // Data ainda não chegou
+    }
+    
+    // Mesma data, comparar horários
+    // Se o horário do slot é menor que o horário atual, o slot já passou
+    // Se o horário do slot é igual ou maior, o slot ainda não passou (pode estar começando agora)
+    return slot.startTime < nowTimeStr;
+  };
+
   const loadAvailableSlots = async () => {
     try {
       const response = await api.get(`/bookings/slots/${publicLink}`);
-      setSlots(response.data.slots || []);
+      const allSlots = response.data.slots || [];
+      
+      // Filtragem adicional no frontend (defesa em profundidade)
+      // Remove slots que já passaram, mesmo que o backend tenha retornado
+      const futureSlots = allSlots.filter((slot: AvailableSlot) => !isSlotInPast(slot));
+      
+      setSlots(futureSlots);
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.response?.data?.details || labels.errorGeneric;
       toast.error(errorMessage);
@@ -303,6 +348,8 @@ function PublicSchedule() {
             style={{
               ...(publicProfile.bannerImageUrl && {
                 '--banner-image': `url(${publicProfile.bannerImageUrl})`,
+                '--banner-position-x': `${publicProfile.bannerPositionX ?? 50}%`,
+                '--banner-position-y': `${publicProfile.bannerPositionY ?? 50}%`,
               } as React.CSSProperties),
             }}
           >

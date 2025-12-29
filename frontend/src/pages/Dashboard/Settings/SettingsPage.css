@@ -1,0 +1,42 @@
+.settings-page-container {
+  max-width: 1200px;
+}
+
+.settings-page-header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.settings-page-header h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.settings-page-header p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.settings-page-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.settings-info {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+}
+
+.settings-info p {
+  margin-bottom: var(--spacing-md);
+}
+
+.settings-info strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+
+
