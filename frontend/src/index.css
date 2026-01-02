@@ -22,8 +22,14 @@ html {
   margin: 0;
 }
 
-/* Pseudo-elemento no html para cobrir safe areas também */
-html::before {
+/* Para página pública, remover background do html e body */
+html:has(.public-schedule-wrapper),
+body:has(.public-schedule-wrapper) {
+  background-color: transparent !important;
+}
+
+/* Pseudo-elemento no html para cobrir safe areas também - apenas para páginas que não são public schedule */
+html:not(:has(.public-schedule-wrapper))::before {
   content: '';
   position: fixed;
   top: calc(-1 * env(safe-area-inset-top, 0px));
@@ -43,6 +49,11 @@ html::before {
   position: relative;
 }
 
+/* Para página pública, remover background do root */
+#root:has(.public-schedule-wrapper) {
+  background-color: transparent !important;
+}
+
 body {
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
@@ -57,8 +68,8 @@ body {
   min-height: -webkit-fill-available;
 }
 
-/* Pseudo-elemento para cobrir safe areas */
-body::before {
+/* Pseudo-elemento para cobrir safe areas - apenas para páginas que não são public schedule */
+body:not(:has(.public-schedule-wrapper))::before {
   content: '';
   position: fixed;
   top: calc(-1 * env(safe-area-inset-top, 0px));

@@ -1,9 +1,16 @@
 .public-schedule-wrapper {
   position: relative;
   background-color: transparent;
-  padding-top: 0;
-  margin-top: 0;
+  padding: 0;
+  margin: 0;
   overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100vw;
+  width: 100dvw;
+  /* Garantir que comece do topo absoluto */
+  top: 0;
+  left: 0;
 }
 
 
@@ -13,18 +20,20 @@
 
 .public-schedule-container {
   padding: 0;
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: 0;
   padding-bottom: calc(var(--spacing-lg, 1.5rem) + env(safe-area-inset-bottom, 0px));
   background-color: transparent;
   position: relative;
   z-index: 1;
   max-width: 600px;
   margin: 0 auto;
+  margin-bottom: 0;
 }
 
 /* Header com Banner - Full Width Estilo X/Twitter */
 .public-profile-header {
-  width: 100%;
+  width: 100vw;
+  width: 100dvw;
   margin: 0;
   margin-bottom: var(--spacing-lg, 1.5rem);
   position: relative;
@@ -32,12 +41,15 @@
   top: 0;
   left: 0;
   right: 0;
-  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
-  padding-top: env(safe-area-inset-top, 0px);
+  margin-top: 0;
+  padding-top: 0;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .public-profile-banner {
-  width: 100%;
+  width: 100vw;
+  width: 100dvw;
   min-height: 200px;
   position: relative;
   overflow: visible;
@@ -49,10 +61,13 @@
   padding-bottom: 80px;
   padding-left: var(--spacing-md, 1rem);
   margin-top: 0;
+  margin-left: 0;
+  margin-right: 0;
   background-clip: border-box;
   background-origin: border-box;
 }
 
+/* Estender background do banner até o topo absoluto incluindo safe area */
 .public-profile-banner::after {
   content: '';
   position: absolute;
@@ -63,31 +78,33 @@
   height: calc(100% + env(safe-area-inset-top, 0px));
   background-color: #1DA1F2;
   z-index: -1;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .public-profile-banner:not(.no-banner)::after {
   background-color: transparent;
   background-image: var(--banner-image, none);
   background-size: cover;
-  background-position: center;
+  background-position: var(--banner-position-x, 50%) var(--banner-position-y, 50%);
   background-repeat: no-repeat;
 }
 
 .public-profile-banner:not(.no-banner) {
   background-color: transparent;
-  background-image: var(--banner-image, none);
+  background-image: none;
   background-size: cover;
   background-position: var(--banner-position-x, 50%) var(--banner-position-y, 50%);
   background-repeat: no-repeat;
-  background-attachment: scroll;
   background-clip: border-box;
   background-origin: border-box;
-  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
-  padding-top: env(safe-area-inset-top, 0px);
-  min-height: calc(300px + env(safe-area-inset-top, 0px));
+  margin-top: 0;
+  padding-top: 0;
+  min-height: 300px;
 }
 
-/* Overlay escuro no banner */
+/* Overlay escuro no banner - estende até o topo absoluto */
 .public-profile-banner::before {
   content: '';
   position: absolute;
@@ -95,21 +112,16 @@
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100%;
+  height: calc(100% + env(safe-area-inset-top, 0px));
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.05));
   pointer-events: none;
   z-index: 1;
   border-radius: 0;
-  height: calc(100% + env(safe-area-inset-top, 0px));
-  width: 100%;
 }
 
 .public-profile-banner.no-banner::before {
   display: none;
-}
-
-.public-profile-banner:not(.no-banner) {
-  min-height: 300px;
-  padding-bottom: 90px;
 }
 
 .public-profile-banner:not(.no-banner)::before {
@@ -239,11 +251,16 @@
 
 /* Wrapper do Conteúdo Principal */
 .public-profile-content-wrapper {
-  width: 100%;
+  width: 100vw;
+  width: 100dvw;
   position: relative;
   background-color: transparent;
   min-height: calc(100vh - env(safe-area-inset-top, 0px));
   min-height: calc(100dvh - env(safe-area-inset-top, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  margin-bottom: 0;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* Conteúdo Principal - Links e Agendamento */
@@ -261,6 +278,8 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  padding-bottom: calc(var(--spacing-md, 1rem) + env(safe-area-inset-bottom, 0px));
+  margin-bottom: 0;
 }
 
 .public-profile-content[style*="background-image"]::before {
@@ -269,7 +288,8 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  width: 100%;
   background-color: rgba(0, 0, 0, 0.3);
   z-index: 0;
   pointer-events: none;
@@ -286,6 +306,8 @@
   .public-profile-content-wrapper {
     min-height: calc(100vh - env(safe-area-inset-top, 0px));
     min-height: calc(100dvh - env(safe-area-inset-top, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    margin-bottom: 0;
   }
 
   .public-profile-content {
@@ -295,6 +317,10 @@
 
   .public-profile-content[style*="background-image"]::before {
     border-radius: var(--border-radius-lg, 16px);
+    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    width: 100%;
   }
 }
 
@@ -307,6 +333,8 @@
     background-position: center;
     background-repeat: no-repeat;
     min-height: calc(100vh - env(safe-area-inset-top, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    margin-bottom: 0;
   }
 
   .public-profile-content-wrapper[data-has-background="true"]::before {
@@ -315,7 +343,8 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    width: 100%;
     background-color: rgba(0, 0, 0, 0.3);
     z-index: 0;
     pointer-events: none;
@@ -612,8 +641,8 @@
 
   .public-profile-header {
     margin-bottom: var(--spacing-sm, 0.5rem);
-    margin-top: calc(-1 * env(safe-area-inset-top, 0px));
-    padding-top: env(safe-area-inset-top, 0px);
+    margin-top: 0;
+    padding-top: 0;
   }
 
   .public-profile-banner {
@@ -653,10 +682,6 @@
   
   .public-profile-banner:not(.no-banner) .public-profile-picture-container {
     bottom: -70px;
-  }
-  
-  .public-profile-picture-container {
-    left: var(--spacing-sm, 0.75rem);
   }
 
   .public-profile-banner.no-banner .public-profile-picture-container {
@@ -797,10 +822,6 @@
   .public-profile-banner:not(.no-banner) .public-profile-picture-container {
     bottom: -65px;
   }
-  
-  .public-profile-picture-container {
-    left: var(--spacing-md, 1rem);
-  }
 
   .public-profile-banner.no-banner .public-profile-picture-container {
     margin-left: var(--spacing-md, 1rem);
@@ -836,7 +857,7 @@
   .public-schedule-container {
     max-width: 600px;
     padding: 0;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: 0;
     padding-bottom: calc(var(--spacing-xl, 2rem) + env(safe-area-inset-bottom, 0px));
   }
 
